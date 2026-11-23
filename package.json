@@ -1,0 +1,1 @@
+{"name":"nothing-after-all","version":"0.3.0","private":true,"type":"module","scripts":{"dev":"vercel dev","test":"node --test tests/*.test.js"}}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-const base='https://nothing-after-all.vercel.app';
+const base='https://becauseafterall.com';
 const api='https://scgihelnwihjckzzvxyc.supabase.co/functions/v1/nothing-game';
 
 async function probe(label,url,check){
@@ -18,7 +18,9 @@ for(const [label,url,check] of [
  ['game CSS',base+'/styles.css',body=>body.includes('--cream')],
  ['privacy',base+'/privacy.html',body=>body.includes('Privacy and Nothing.')],
  ['updates',base+'/updates.html',body=>body.includes('updatesForm')],
+ ['email confirmation page',base+'/email.html',body=>body.includes('confirm_email')&&body.includes('unsubscribe_email')],
  ['API health',api+'?action=health',body=>{try{return JSON.parse(body).ok===true}catch{return false}}],
+ ['email configuration status',api+'?action=email_status',body=>{try{return typeof JSON.parse(body).enabled==='boolean'}catch{return false}}],
  ['leaderboard API',api+'?action=leaderboard',body=>{try{return Array.isArray(JSON.parse(body).top)}catch{return false}}],
 ]){
  try{await probe(label,url,check)}catch(e){console.error('FAIL',label,e.message);failed=true}

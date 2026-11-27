@@ -14,6 +14,9 @@ async function probe(label,url,check){
 let failed=false;
 for(const [label,url,check] of [
  ['game HTML',base+'/',body=>body.includes('AFTER ALL PRESENTS')&&body.includes('/app.js')&&!body.includes('Nothing.')],
+ ['social preview PNG',base+'/social-card-v2.png',(_,response)=>response.headers.get('content-type')?.includes('image/png')===true],
+ ['share metadata',base+'/',body=>body.includes('og:image')&&body.includes('/social-card-v2.png')&&body.includes('og:image:width')],
+ ['robots metadata access',base+'/robots.txt',body=>body.includes('Allow: /')&&!body.includes('Disallow: /')],
  ['game JS',base+'/app.js',body=>body.includes('state.misses>=3')&&body.includes('hitObjects')],
  ['game CSS',base+'/styles.css',body=>body.includes('--cream')],
  ['privacy',base+'/privacy.html',body=>body.includes('<h2>Privacy</h2>')],

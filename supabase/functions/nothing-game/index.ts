@@ -122,13 +122,17 @@ if(action==='waitlist'&&req.method==='POST'){
    const waves=wavesFor(Number(round.seed),round.viewport_width),hit=new Set<string>();
    let calculated=0,combo=0,lastAt=-100;
    for(const e of events){
-    if(!Number.isInteger(e.wave)||!Number.isInteger(e.fruit)||!Number.isFinite(e.at)||!Number.isFinite(e.x)||!Number.isFinite(e.y))return respond({error:'Invalid slice event'},400);
+    if(!Number.isInteger(e.wave)||!Number.isInteger(e.fruit)||!Number.isFinite(e.at)||!Number.isFinite(e.x)||!Number.isFinite(e.y)||!Number.isFinite(e.x0)||!Number.isFinite(e.y0)||!Number.isFinite(e.x1)||!Number.isFinite(e.y1))return respond({error:'Invalid slice event'},400);
     const wave=waves[e.wave],obj=wave?.entries[e.fruit],at=Number(e.at),key=e.wave+':'+e.fruit,dt=at-(wave?.sec||0);
     if(!obj||obj.bomb||hit.has(key)||at<lastAt||at>endAt+.2||dt<0||dt>2.6){await logFlag(player.id,roundId,'event sequence impossible');return respond({error:'Score could not be verified'},400)}
     const H=round.viewport_height,W=round.viewport_width,g=H*2.1,vy=-Math.sqrt(2*g*(obj.apex*H+45));
     const expectedY=H+45+vy*dt+.5*g*dt*dt,expectedX=obj.x*W+obj.vx*W*dt;
     const distance=Math.hypot(expectedX-e.x,expectedY-e.y);
     if(distance>95){await logFlag(player.id,roundId,'position mismatch '+Math.round(distance));return respond({error:'Slice position could not be verified'},400)}
+    const dx=e.x1-e.x0,dy=e.y1-e.y0,gestureLength=Math.hypot(dx,dy);
+    if(gestureLength<12||gestureLength>Math.max(900,W*1.3)||[e.x0,e.x1].some(x=>x<0||x>W)||[e.y0,e.y1].some(y=>y<0||y>H))return respond({error:'Swipe event could not be verified'},400);
+    const along=Math.max(0,Math.min(1,((e.x-e.x0)*dx+(e.y-e.y0)*dy)/(dx*dx+dy*dy||1)));
+    if(Math.hypot(e.x-(e.x0+along*dx),e.y-(e.y0+along*dy))>50){await logFlag(player.id,roundId,'gesture mismatch');return respond({error:'Swipe missed the fruit'},400)}
     hit.add(key);combo=at-lastAt<.18?combo+1:1;calculated+=10+(combo>=2?5:0);lastAt=at;
    }
    if(calculated!==score){await logFlag(player.id,roundId,'score mismatch');return respond({error:'Score mismatch'},400)}

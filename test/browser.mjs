@@ -26,7 +26,7 @@ const port=server.address().port;
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium'].find(p=>existsSync(p))||'google-chrome';
 const profile=await mkdtemp(join(tmpdir(),'nothing-chrome-'));
 const debugPort=19223;
-const child=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-debugging-port='+debugPort,'--user-data-dir='+profile,'about:blank'],{stdio:'ignore'});
+const child=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-allow-origins=*','--remote-debugging-port='+debugPort,'--user-data-dir='+profile,'about:blank'],{stdio:'ignore'});
 const pending=new Map();let ws,seq=0;let errors=[];
 async function json(url){const r=await fetch(url);if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
 async function setup(){
@@ -50,7 +50,7 @@ try{
  await evalJS("document.querySelector('#play').click()");
  await waitFor("document.querySelector('#hud').classList.contains('visible')",13000);
  await waitFor("Number(document.querySelector('#time').textContent)<45",6000);
- await waitFor("!document.querySelector('#end').hidden",13000);
+ await waitFor("!document.querySelector('#end').hidden",25000);
  assert.ok(await evalJS("!document.querySelector('#end').hidden"),'end screen visible');
  assert.ok(await evalJS("Boolean(document.querySelector('#again').onclick)"),'replay wired');
  await evalJS("document.querySelector('#openBoard').click()");

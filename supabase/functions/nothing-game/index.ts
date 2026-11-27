@@ -78,8 +78,11 @@ if(action==='waitlist'&&req.method==='POST'){
    if(b.consent!==true)return respond({error:'Please confirm that you want emails from After All.'},400);
    const {count}=await db.from('nothing_waitlist').select('*',{count:'exact',head:true}).eq('player_id',player.id).gte('created_at',new Date(Date.now()-86400000).toISOString());
    if((count||0)>=3)return respond({error:'Too many attempts. Try another day.'},429);
-   const {data:existing}=await db.from('nothing_waitlist').select('id').eq('email_normalized',email).maybeSingle();
-   if(existing)return respond({accepted:true,already:true,verified:false});
+   const {data:existing}=await db.from('nothing_waitlist').select('id,player_id,unsubscribed_at').eq('email_normalized',email).maybeSingle();
+   if(existing){
+    if(existing.player_id===player.id&&existing.unsubscribed_at){const {error:resetError}=await db.from('nothing_waitlist').update({unsubscribed_at:null,marketing_consent:true}).eq('id',existing.id);if(resetError)throw resetError;return respond({accepted:true,resubscribed:true,verified:false})}
+    return respond({accepted:true,already:true,verified:false});
+   }
    const {error}=await db.from('nothing_waitlist').insert({player_id:player.id,email,marketing_consent:true,source:'nothing'});
    if(error)throw error;
    return respond({accepted:true,verified:false});

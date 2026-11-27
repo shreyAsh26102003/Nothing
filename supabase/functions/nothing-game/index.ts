@@ -83,8 +83,9 @@ if(action==='waitlist'&&req.method==='POST'){
     if(action==='profile'&&req.method==='GET'){
    const {data}=await db.from('nothing_guest_scores').select('score,display_name').eq('player_id',player.id).maybeSingle();
    if(!data)return respond({playerId:player.id,best:0,name:player.display_name,rank:null});
-   const {count}=await db.from('nothing_guest_scores').select('*',{count:'exact',head:true}).gt('score',data.score);
-   return respond({playerId:player.id,best:data.score,name:data.display_name,rank:(count||0)+1});
+   const {data:rank,error:rankError}=await db.rpc('nothing_rank_guest',{p_player_id:player.id});
+   if(rankError)throw rankError;
+   return respond({playerId:player.id,best:data.score,name:data.display_name,rank:rank||null});
   }
   if(action==='start'&&req.method==='POST'){
    const body=await req.json(),width=Number(body.width),height=Number(body.height);

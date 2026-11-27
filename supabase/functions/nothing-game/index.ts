@@ -4,18 +4,18 @@ const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVI
 const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'};
 const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers});
 function rng(seed:number){let a=seed>>>0;return ()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
-function wavesFor(seed:number){
+function wavesFor(seed:number,width=390){
  const random=rng(seed),waves=[];
  let sec=.85;
  for(let w=0;sec<44.3&&w<80;w++){
   const phase=sec<7?0:sec<18?1:sec<30?2:3;
-  const count=phase===0?2+(random()<.27?1:0):phase===1?2+Math.floor(random()*3):phase===2?3+Math.floor(random()*3):3+Math.floor(random()*3);
+  const compact=width<440;const count=phase===0?2+(random()<.27?1:0):phase===1?3+Math.floor(random()*(compact?2:3)):phase===2?3+Math.floor(random()*(compact?2:3)):3+Math.floor(random()*(compact?2:3));
   const risk=phase===0?.18:phase===1?.31:phase===2?.43:.52;
   const bombIndex=random()<risk?Math.floor(random()*count):-1;
   const shuffled=Array.from({length:count},(_,i)=>i).sort(()=>random()-.5);
   const entries=Array.from({length:count},(_,i)=>{
    const lane=shuffled[i],jitter=(random()-.5)*.08,fruit=Math.floor(random()*5);
-   return {bomb:i===bombIndex,fruit,x:.09+.82*(lane+.5)/count+jitter,vx:(random()-.5)*.07,apex:.65+random()*.21};
+   return {bomb:i===bombIndex,fruit,x:(width<440?.14:.09)+(width<440?.72:.82)*(lane+.5)/count+jitter,vx:(random()-.5)*.07,apex:.65+random()*.21};
   });
   waves.push({sec:Math.round(sec*100)/100,entries});
   const base=phase===0?1.22:phase===1?1.02:phase===2?.82:.7;
@@ -94,7 +94,7 @@ if(action==='waitlist'&&req.method==='POST'){
    const seed=crypto.getRandomValues(new Uint32Array(1))[0];
    const {data,error}=await db.from('nothing_rounds').insert({player_id:player.id,seed,viewport_width:width,viewport_height:height}).select('id,started_at').single();
    if(error)throw error;
-   return respond({roundId:data.id,startedAt:data.started_at,waves:wavesFor(seed)});
+   return respond({roundId:data.id,startedAt:data.started_at,waves:wavesFor(seed,width)});
   }
   if(action==='submit'&&req.method==='POST'){
    const b=await req.json(),name=String(b.name||'').trim(),roundId=String(b.roundId||''),score=Number(b.score),endAt=Number(b.endAt),events=b.events;
@@ -104,7 +104,7 @@ if(action==='waitlist'&&req.method==='POST'){
    if(roundErr||!round||round.claimed_at||new Date(round.expires_at).getTime()<Date.now())return respond({error:'Round expired or already claimed.'},409);
    const serverAge=(Date.now()-new Date(round.started_at).getTime())/1000;
    if(serverAge+1<endAt||serverAge>86430)return respond({error:'Round duration could not be verified.'},400);
-   const waves=wavesFor(Number(round.seed)),hit=new Set<string>();
+   const waves=wavesFor(Number(round.seed),round.viewport_width),hit=new Set<string>();
    let calculated=0,combo=0,lastAt=-100;
    for(const e of events){
     if(!Number.isInteger(e.wave)||!Number.isInteger(e.fruit)||!Number.isFinite(e.at)||!Number.isFinite(e.x)||!Number.isFinite(e.y))return respond({error:'Invalid slice event'},400);

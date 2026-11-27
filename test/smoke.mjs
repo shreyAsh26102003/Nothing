@@ -75,8 +75,8 @@ test('After All updates page is clear, accessible, and separate from game sign-u
  assert.match(teaser,/id="updatesForm"/);
  assert.match(teaser,/id="consent" type="checkbox"/);
  assert.match(teaser,/id="leaveForm"/);
- assert.match(teaser,/https:\/\/becauseafterall\.com\/social-card\.svg/);
- assert.match(html,/https:\/\/becauseafterall\.com\/social-card\.svg/);
+ assert.match(teaser,/https:\/\/becauseafterall\.com\/social-card-v2\.png/);
+ assert.match(html,/https:\/\/becauseafterall\.com\/social-card-v2\.png/);
 });
 
 test('email confirmation is server-side, consent-based and not implicitly verified',()=>{

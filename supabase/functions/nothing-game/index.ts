@@ -34,7 +34,7 @@ async function readPlayer(req:Request){
 function validName(name:string){return /^[a-zA-Z0-9][a-zA-Z0-9 ._-]{1,23}$/.test(name)&&!/\b(fuck|cunt|nigger|bitch|asshole|nazi)\b/i.test(name)}
 function finishTime(entry:{apex:number},height:number){
  const g=height*2.1,vy=-Math.sqrt(2*g*(entry.apex*height+45));
- return (-vy+Math.sqrt(vy*vy+2*g*20))/g;
+ return (-vy+Math.sqrt(vy*vy+2*g*35))/g;
 }
 async function logFlag(playerId:string,roundId:string,reason:string){
  try{await db.from('nothing_score_flags').insert({player_id:playerId,round_id:roundId,reason,severity:2})}catch{}
@@ -48,7 +48,7 @@ Deno.serve(async (req:Request)=>{
  if(req.method==='OPTIONS')return new Response('',{headers});
  const action=new URL(req.url).searchParams.get('action')||'leaderboard';
  try {
-  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v4'});
+  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v7'});
   if(action==='leaderboard'&&req.method==='GET')return respond(await top());
   if(action==='register'&&req.method==='POST'){
    const token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(v=>v.toString(16).padStart(2,'0')).join('');
@@ -123,22 +123,14 @@ if(action==='waitlist'&&req.method==='POST'){
    landingTimes.sort((a,b)=>a-b);misses=landingTimes.length;firstThirdMiss=landingTimes[2]??Infinity;
    if(result==='time'&&endAt<44.7)return respond({error:'Round ended too early'},400);
    if(result==='misses'&&(misses<3||firstThirdMiss>endAt+.3||firstThirdMiss<endAt-.45))return respond({error:'Miss count could not be verified'},400);
-   if(result==='bomb'){const bomb=b.bomb;const wave=waves[bomb?.wave],obj=wave?.entries[bomb?.fruit],dt=Number(bomb?.at)-Number(wave?.sec);if(!obj?.bomb||!Number.isFinite(dt)||dt<0||dt>2.6||Math.abs(Number(bomb.at)-endAt)>.3)return respond({error:'Bomb hit could not be verified'},400)}
+   if(result==='bomb'){const bomb=b.bomb;const wave=waves[bomb?.wave],obj=wave?.entries[bomb?.fruit],dt=Number(bomb?.at)-Number(wave?.sec);if(!obj?.bomb||!Number.isFinite(dt)||dt<0||dt>2.6||Math.abs(Number(bomb.at)-endAt)>.3)return respond({error:'Bomb hit could not be verified'},400);if(misses>=3&&firstThirdMiss<endAt-.35)return respond({error:'Round should have ended on misses'},400)}
    if(!['time','misses','bomb'].includes(result))return respond({error:'Round ending is invalid'},400);
    if(misses>=3&&result==='time')return respond({error:'Miss limit was reached'},400);
    const flagged=score>1800||events.length>160;
-   const {data:claimed,error:claimErr}=await db.from('nothing_rounds').update({claimed_at:new Date().toISOString(),score,events,duration:endAt,flagged}).eq('id',roundId).is('claimed_at',null).select('id');
-   if(claimErr||!claimed?.length)return respond({error:'This round was already claimed'},409);
+   const {data:committed,error:commitErr}=await db.rpc('nothing_commit_round',{p_round_id:roundId,p_player_id:player.id,p_name:name,p_score:score,p_events:events,p_duration:endAt,p_flagged:flagged});
+   if(commitErr){console.warn('commit round',commitErr.message);return respond({error:'Score could not be saved. Please try again.'},409)}
    if(flagged)await logFlag(player.id,roundId,'unusually high score');
-   const {data:existing}=await db.from('nothing_guest_scores').select('score').eq('player_id',player.id).maybeSingle();
-   await db.from('nothing_guest_players').update({display_name:name,last_seen_at:new Date().toISOString()}).eq('id',player.id);
-   const best=Math.max(score,existing?.score||0);
-   if(!existing||score>existing.score){
-    const {error:saveErr}=await db.from('nothing_guest_scores').upsert({player_id:player.id,display_name:name,score,achieved_at:new Date().toISOString(),updated_at:new Date().toISOString()});
-    if(saveErr)throw saveErr;
-   }
-   const {count}=await db.from('nothing_guest_scores').select('*',{count:'exact',head:true}).gt('score',best);
-   return respond({accepted:true,best,rank:(count||0)+1,flagged});
+   return respond(committed);
   }
   return respond({error:'Not found'},404);
  } catch(e){console.error('nothing-game',action,e);return respond({error:'Something went wrong on our end.'},500)}

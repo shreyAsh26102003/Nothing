@@ -37,7 +37,7 @@ test('email code is not required for leaderboard',()=>{
 });
 test('leaderboard, score challenge, and card are implemented',()=>{
  assert.match(js,/request\('leaderboard'/);
- assert.match(js,/\?challenge=/);
+ assert.match(js,/URLSearchParams\(\{challenge:/);
  assert.match(js,/toDataURL\('image\/png'\)/);
  assert.match(html,/id="share"/);
 });

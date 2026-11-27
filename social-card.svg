@@ -1,1 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#fff2d9"/><circle cx="1070" cy="70" r="230" fill="#f6c6a1"/><circle cx="95" cy="585" r="170" fill="#ffd865"/><circle cx="1120" cy="555" r="210" fill="#c8d7b2"/><g stroke="#261a20" stroke-width="8" stroke-linejoin="round"><path d="M955 225c-57-81-148-27-140 64 5 60 51 116 119 117 85 2 129-74 98-131-12-21-35-36-77-50Z" fill="#ffa72c"/><path d="M942 232c-20-38-16-67 14-79" fill="none" stroke="#397b46" stroke-width="12"/><path d="M201 370c-54-38-99-12-112 37-11 49 9 92 69 102 64 9 108-49 86-96-9-21-23-32-43-43Z" fill="#ea596a"/><path d="M175 366c12-31 31-45 58-39" fill="none" stroke="#397b46" stroke-width="12"/><path d="M1047 475c-52-24-83 17-78 62 5 46 33 80 76 76 45-5 77-52 60-92-10-23-29-37-58-46Z" fill="#6f4d97"/></g><text x="600" y="104" font-family="Arial, sans-serif" text-anchor="middle" fill="#261a20" font-size="28" font-weight="900" letter-spacing="4">AFTER ALL PRESENTS</text><text x="600" y="325" font-family="Arial, sans-serif" text-anchor="middle" fill="#261a20" font-size="72" font-weight="900" letter-spacing="-3">How many can you slice?</text><text x="600" y="393" font-family="Arial, sans-serif" text-anchor="middle" fill="#261a20" font-size="28" font-weight="700">You have 45 seconds to see how high you can score.</text><rect x="470" y="448" width="260" height="72" rx="36" fill="#ff614d" stroke="#261a20" stroke-width="6"/><text x="600" y="493" font-family="Arial, sans-serif" text-anchor="middle" fill="#261a20" font-size="25" font-weight="900">PLAY</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#FFF0D4"/>
+  <circle cx="1190" cy="-25" r="230" fill="#F8C9AE"/>
+  <circle cx="1142" cy="630" r="155" fill="#F2D66E"/>
+  <circle cx="48" cy="604" r="88" fill="#FFD966"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#2B1B28">
+    <text x="76" y="111" font-size="30" font-weight="900" letter-spacing="4">AFTER ALL PRESENTS</text>
+    <text x="74" y="287" font-size="103" font-weight="900" letter-spacing="-5">How many</text>
+    <text x="74" y="385" font-size="96" font-weight="900" letter-spacing="-5">can you slice?</text>
+    <text x="78" y="452" font-size="27" font-weight="600">Slice fruit and see how high you can score.</text>
+  </g>
+  <rect x="74" y="503" width="218" height="66" rx="33" fill="#FF705C" stroke="#2B1B28" stroke-width="5"/>
+  <text x="183" y="546" fill="#2B1B28" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="900" text-anchor="middle">PLAY</text>
+  <text x="326" y="547" fill="#2B1B28" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="700">45 SECONDS · 3 MISSES</text>
+  <g stroke="#2B1B28" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M940 180 C897 137 821 163 807 243 C785 335 825 413 924 422 C1025 428 1087 340 1049 257 C1030 217 1005 197 940 180Z" fill="#FFB12B"/>
+    <path d="M930 181 Q925 144 948 124" fill="none" stroke="#397B46" stroke-width="12"/>
+    <path d="M931 159 C959 132 994 136 1007 149 C971 170 950 177 931 159Z" fill="#5BA45C" stroke="#397B46" stroke-width="5"/>
+    <path d="M1080 429 C1042 396 1002 415 991 459 C977 509 998 574 1053 581 C1118 590 1159 523 1132 471 C1123 448 1107 440 1080 429Z" fill="#EC5474"/>
+    <path d="M1086 433 L1060 412 L1074 442 L1109 417 L1100 446" fill="#4F9857" stroke="#397B46" stroke-width="6"/>
+    <path d="M862 487 C837 462 794 471 774 502 C756 530 758 578 793 601 C834 629 879 606 889 559 C896 529 887 504 862 487Z" fill="#79549D"/>
+  </g>
+  <g fill="#FFD8B4">
+    <ellipse cx="1042" cy="476" rx="4" ry="7" transform="rotate(-25 1042 476)"/>
+    <ellipse cx="1084" cy="474" rx="4" ry="7" transform="rotate(25 1084 474)"/>
+    <ellipse cx="1064" cy="511" rx="4" ry="7" transform="rotate(-15 1064 511)"/>
+    <ellipse cx="1103" cy="516" rx="4" ry="7" transform="rotate(20 1103 516)"/>
+    <ellipse cx="1044" cy="548" rx="4" ry="7" transform="rotate(15 1044 548)"/>
+  </g>
+</svg>

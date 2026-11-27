@@ -4,6 +4,7 @@ import { mkdtemp, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, extname, resolve, sep } from 'node:path';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import assert from 'node:assert/strict';
 
@@ -22,7 +23,7 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 const port=server.address().port;
-const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium'].find(p=>{try{return !!process.binding('fs').internalModuleStat(p)}catch{return false}})||'google-chrome';
+const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium'].find(p=>existsSync(p))||'google-chrome';
 const profile=await mkdtemp(join(tmpdir(),'nothing-chrome-'));
 const debugPort=19223;
 const child=spawn(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-debugging-port='+debugPort,'--user-data-dir='+profile,'about:blank'],{stdio:'ignore'});

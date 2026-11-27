@@ -69,9 +69,9 @@ test('data requests, optional updates and guest deletion are wired',()=>{
  assert.match(api,/action==='unsubscribe'/);
 });
 
-test('After All teaser is poetic, accessible, and separate from game sign-up',()=>{
+test('After All updates page is clear, accessible, and separate from game sign-up',()=>{
  const teaser=readFileSync(new URL('updates.html',here),'utf8');
- for(const line of ['Before anyone made a treat','Fruit has been doing just fine','What if the original indulgence','had a second act?','KEEP ME POSTED'])assert.ok(teaser.includes(line));
+ for(const line of ['We\'ve always thought fruit','working on a few ideas','Want to hear from us?','KEEP ME POSTED'])assert.ok(teaser.includes(line));
  assert.match(teaser,/id="updatesForm"/);
  assert.match(teaser,/id="consent" type="checkbox"/);
  assert.match(teaser,/id="leaveForm"/);
@@ -99,4 +99,12 @@ test('email confirmation is server-side, consent-based and not implicitly verifi
    assert.ok(scripts.length>0);
    for(const m of scripts)new Script(m[1]);
  }
+});
+
+test('player-facing pages do not refer to the retired game name',()=>{
+ const pages=['index.html','updates.html','privacy.html','email.html','social-card.svg'];
+ for(const path of pages){const text=readFileSync(new URL(path,here),'utf8');assert.doesNotMatch(text,/Nothing\./i,path+' must not mention the old game title')}
+ assert.doesNotMatch(js,/Nothing\./i);
+ assert.match(html,/AFTER ALL PRESENTS/);
+ assert.match(html,/>PLAY<\/button>/);
 });

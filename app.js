@@ -105,8 +105,9 @@ async function submitScore(){
  if(!state.pending||!state.guest)throw new Error('This round cannot be ranked.');
  const n=$('playerName').value.trim()||state.name;
  if(!/^[a-zA-Z0-9][a-zA-Z0-9 ._-]{1,23}$/.test(n))throw new Error('Use 2–24 letters or numbers for your name.');
- const result=await request('submit','POST',{...state.pending,name:n});
- state.name=n;save('nothing-name-v2',n);state.pending=null;remove('nothing-pending-v2');track('claim_verified');state.profile={best:result.best,rank:result.rank,name:n};return result;
+ const submitted=state.pending;
+ const result=await request('submit','POST',{...submitted,name:n});
+ state.name=n;save('nothing-name-v2',n);if(state.pending?.roundId===submitted.roundId){state.pending=null;remove('nothing-pending-v2')}track('claim_verified');state.profile={best:result.best,rank:result.rank,name:n};return result;
 }
 async function showBoard(){
  screen('board');state.showAll=false;label('boardMessage','Loading the leaderboard…');$('claim').hidden=!state.pending;label('claimStatus','');$('playerName').value=state.name;

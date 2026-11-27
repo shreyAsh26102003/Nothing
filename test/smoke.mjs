@@ -46,3 +46,25 @@ test('data collection is minimal, no private service keys in frontend',()=>{
  assert.doesNotMatch(html,/<input[^>]*type="email"/i);
  assert.match(api,/secret_hash/);
 });
+
+test('production registration uses a defined environment-backed rate-limit salt',()=>{
+ assert.match(api,/hash\('nothing-register:'\+ip\+':'\+\(Deno\.env\.get\('SUPABASE_SERVICE_ROLE_KEY'\)/);
+ assert.doesNotMatch(api, /key\.slice\(0,16\)/);
+});
+test('leaderboard uses atomic submission, swipe proof and moderated ranks',()=>{
+ assert.match(api,/nothing_commit_round/);
+ assert.match(api,/nothing_top_scores/);
+ assert.match(api,/e\.x0/);
+ assert.match(api,/e\.y1/);
+ assert.match(js,/x0:Math\.round\(a\.x\)/);
+ assert.match(js,/x1:Math\.round\(b\.x\)/);
+});
+test('data requests, optional updates and guest deletion are wired',()=>{
+ for(const page of ['updates.html','privacy.html']){
+  const content=readFileSync(new URL(page,here),'utf8');
+  for(const script of content.matchAll(/<script>([\s\S]*?)<\/script>/g))new Script(script[1]);
+ }
+ assert.match(api,/action==='delete_profile'/);
+ assert.match(api,/action==='export_profile'/);
+ assert.match(api,/action==='unsubscribe'/);
+});

@@ -1,44 +1,51 @@
-# Nothing. — launch and communications copy
-Working copy only. Approved product name **Nothing.** Do not reference a top-100 giveaway before the formal announcement.
+# After All — game and launch copy
+The game has no separate public name. All user-facing touchpoints should use After All, plain language and straightforward instructions. Avoid forced punchlines, teaser threats, ironic framing, clipped fragments, or unnecessary exclamation points. Do not reference any potential reward before founder approval.
 
 ## Home screen
 AFTER ALL PRESENTS
-**Nothing.**
-For when you've got a little time to kill.
-Slice some fruit. Try not to hit the bombs. See how far you get.
-PLAY NOTHING.
-45 seconds · 3 misses.
+
+How many can you slice?
+
+You have 45 seconds to slice as much fruit as you can without hitting a bomb. Miss three and your round is over.
+
+PLAY
+
+45 SECONDS · 3 MISSES
 
 ## Quiet seeding
 **WhatsApp to creative/studio teams**
-"We made Nothing. Literally. A tiny game for whenever you've got a minute between things. Curious who gets the highest score in your office: https://nothing-after-all.vercel.app"
+
+"We made a little fruit-slicing game. If you've got a minute, try it and tell me how high you score. I'm curious who in your office does best: https://becauseafterall.com"
 
 **DM to creators**
-"Built a little fruit-slicing distraction called Nothing. No brief, no pitch — just see if you can beat my score."
+
+"We've made a game where you slice fruit for 45 seconds. Give it a try when you have a minute and tell me your score: https://becauseafterall.com"
 
 **Instagram story**
-"Someone's done absolutely Nothing. and scored [score]."
-Link sticker: "PLAY NOTHING."
+
+"We made a fruit-slicing game. See how many you can get in 45 seconds."
+
+Link sticker: "PLAY"
 
 **Company office challenge**
-"Which team is best at doing Nothing.? Play once. Share a screenshot of your best score with the group."
+
+"Who gets the highest score in your office? We made a fruit-slicing game and have a leaderboard at becauseafterall.com."
 
 ## Challenge share
-"I scored [score] playing Nothing. Think you can beat that? [challenge URL]"
-
-## Subtle After All connection
-Made by After All.
-Something's coming. In the meantime, here's Nothing.
+"I scored [score] on the fruit game from After All. Can you beat it? [challenge URL]"
 
 ## Release announcement (without prizes)
-"Introducing Nothing., a small game from After All. Slice the fruit, dodge the bombs, and find out how seriously you take doing absolutely nothing. 45 seconds. Three misses. One score."
+"We've put a fruit-slicing game on our website. You've got 45 seconds to slice as much fruit as you can, but three misses or one bomb will end your round. You can save your score to the leaderboard without creating an account. Try it here: https://becauseafterall.com"
 
 ## Support replies
-**Score did not save:** "If you played offline, the round isn't eligible for the official leaderboard. For an online round, reopen the leaderboard and use Save Score. If it still fails, share your device/browser and the approximate time — never your secret player token."
+**Score did not save:** "If you played without a connection, your score won't appear on the leaderboard. Otherwise, open the leaderboard and select Save Score. If that doesn't work, tell us which device and browser you're using."
 
-**Score held for review:** "Your score was received but is awaiting a routine check. We'll review it using the same rules for everyone."
+**Score held for review:** "We've received your score, but it's waiting for a routine review. We'll apply the same checks to everyone."
 
-**Can't recover old identity:** "Nothing. currently saves your playing identity in your browser. If your browser data was cleared, we may not be able to restore that identity. This is displayed in the leaderboard and privacy notice."
+**Can't recover old identity:** "Your score is linked to the browser you played on. If you've cleared your browser data, we might not be able to restore your previous ranking."
+
+## Email updates
+"We've always thought fruit was pretty great on its own. Now we're working on a few ideas of our own, and we'd love to share them when they're ready."
 
 ## Product launch vs reward announcement
-Do not mix the quiet release with a promise of future product. Reward announcement requires the separate approved competition rules, identity/claim flow and fulfilment readiness.
+Do not mix the quiet release with a promise of future product. Reward announcements require approved competition rules, identity checks and a fulfilment process.

@@ -2,14 +2,14 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fff0d4">
-<meta name="description" content="Nothing. A little game for when you've got time to kill. Made by After All.">
-<meta property="og:title" content="Nothing. — After All">
-<meta property="og:description" content="Slice some fruit. Avoid the bombs. See how high you can score.">
+<meta name="description" content="A fruit-slicing game from After All. See how high you can score in 45 seconds.">
+<meta property="og:title" content="A game from After All">
+<meta property="og:description" content="Slice the fruit, avoid the bombs and see how high you can score in 45 seconds.">
 <meta property="og:type" content="website"><meta property="og:url" content="https://becauseafterall.com/">
 <meta property="og:image" content="https://becauseafterall.com/social-card.svg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
-<title>Nothing. — After All</title></head>
+<title>Play — After All</title></head>
 <body>
 <canvas id="game" aria-label="Swipe or drag across the fruit to slice it. Avoid the bombs."></canvas>
 <div class="hud" id="hud" aria-live="off">
@@ -19,26 +19,26 @@
 </div>
 <div id="countdown" aria-live="off"></div>
 <div id="feedback" aria-live="polite"></div>
-<div class="brand-footer" id="brandFooter">A GAME BY AFTER ALL</div>
+<div class="brand-footer" id="brandFooter">MADE BY AFTER ALL</div>
 
 <section class="overlay" id="home">
   <div class="panel">
     <div class="kicker">AFTER ALL PRESENTS</div>
-    <h1>Nothing.</h1>
-    <p class="lede" id="intro">For when you've got a little time to kill. Slice some fruit and see how high you can score.</p>
-    <button class="btn primary-wide" id="play" type="button">PLAY NOTHING.</button>
+    <h1>How many can you slice?</h1>
+    <p class="lede" id="intro">You have 45 seconds to slice as much fruit as you can without hitting a bomb. Miss three and your round is over.</p>
+    <button class="btn primary-wide" id="play" type="button">PLAY</button>
     <div class="home-meta">
       <span class="rules">45 SECONDS · 3 MISSES</span>
       <button class="text-button" type="button" id="sound" aria-pressed="true">Sound on</button>
     </div>
     <button class="text-button" type="button" id="boardFromHome">The leaderboard</button>
-    <p class="subtle">There might be a good reason to get good at this later.</p><p class="subtle"><a href="/updates.html" class="text-button">Hear from After All</a> · <a href="/privacy.html" class="text-button">Privacy</a></p>
+    <p class="subtle"><a href="/updates.html" class="text-button">Get updates from After All</a> · <a href="/privacy.html" class="text-button">Privacy</a></p>
   </div>
 </section>
 
 <section class="overlay" id="end" hidden>
   <div class="panel">
-    <div class="kicker">NOT BAD FOR DOING NOTHING</div>
+    <div class="kicker">YOUR SCORE</div>
     <h2 id="resultHeading">Well played.</h2>
     <div class="big-score" id="finalScore" aria-live="polite">0</div>
     <div class="score-under" id="best">Personal best: 0</div>
@@ -48,17 +48,17 @@
       <button class="btn alt" id="openBoard" type="button">LEADERBOARD</button>
     </div>
     <div class="end-links">
-      <button class="text-button" id="share" type="button">CHALLENGE A FRIEND</button>
+      <button class="text-button" id="share" type="button">SHARE YOUR SCORE</button>
       <button class="text-button" id="saveCard" type="button">SAVE SCORE CARD</button>
     </div>
-    <button class="text-button" id="backHome" type="button">Back to Nothing.</button>
+    <button class="text-button" id="backHome" type="button">Back to game</button>
   </div>
 </section>
 
 <section class="overlay" id="board" hidden>
   <div class="panel">
     <div class="card-heading">
-      <h2>The leaderboard.</h2>
+      <h2>Leaderboard</h2>
       <button class="close" id="boardClose" type="button" aria-label="Close leaderboard">×</button>
     </div>
     <div class="board-info">
@@ -69,15 +69,15 @@
     <div class="ranking" id="ranking" aria-label="Top players"></div>
     <div class="board-actions"><button id="more" class="text-button" type="button" hidden>SEE TOP 100</button></div>
     <div class="claim" id="claim" hidden>
-      <h3>Put your name on it.</h3>
-      <p>Claim your score on the leaderboard. No email or account needed.</p>
+      <h3>Add your name to the leaderboard</h3>
+      <p>Save your score without signing up or giving us your email.</p>
       <form id="claimForm">
         <input required id="playerName" type="text" maxlength="24" minlength="2" pattern="[A-Za-z0-9][A-Za-z0-9 ._\-]{1,23}" placeholder="Your leaderboard name" autocomplete="nickname" aria-label="Leaderboard name">
         <button class="btn" type="submit" id="claimButton">SAVE SCORE</button>
       </form>
       <div class="status" id="claimStatus" role="status"></div>
     </div>
-    <p class="subtle" id="boardNote">Scores are tied to this browser. Keep your browser data to keep your place.</p>
+    <p class="subtle" id="boardNote">Your scores are linked to this browser. Clearing browser data may mean losing access to them.</p>
   </div>
 </section>
 <script src="/app.js" defer></script>

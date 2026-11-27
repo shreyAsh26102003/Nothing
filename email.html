@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#fff0d4">
+<title>Email preferences — After All</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+html,body{height:auto;min-height:100%;overflow:auto}
+.email-page{min-height:100dvh;display:grid;place-items:center;padding:22px;background:#fff0d4}
+.email-card{width:min(520px,100%);padding:clamp(26px,6vw,45px);border-radius:20px;border:2px solid #2b1b28;background:#fffdf6;box-shadow:6px 6px 0 #2b1b28}
+.email-logo{font-weight:900;letter-spacing:1.1px;font-size:14px;margin:0 0 55px}
+.email-card h1{font-size:clamp(36px,7vw,57px);line-height:1.07;letter-spacing:-.06em;margin:0 0 20px}
+.email-card p{line-height:1.55}
+.email-card .btn{display:inline-block;text-decoration:none;margin-top:20px;font-size:14px}
+#emailStatus{font-size:16px}
+</style>
+</head>
+<body>
+<main class="email-page">
+<section class="email-card">
+<p class="email-logo">AFTER ALL.</p>
+<h1 id="emailHeading">One moment.</h1>
+<p id="emailStatus" role="status" aria-live="polite">Checking your link…</p>
+<a class="btn" href="/updates.html">BACK TO AFTER ALL</a>
+</section>
+</main>
+<script>
+(async()=>{
+ const heading=document.getElementById('emailHeading'),status=document.getElementById('emailStatus');
+ const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+ const token=hash.get('confirm')||hash.get('unsubscribe'),action=hash.has('confirm')?'confirm_email':'unsubscribe_email';
+ // Never retain a confirmation credential in browser address history.
+ try{history.replaceState(null,'',location.pathname)}catch{}
+ if(!token||!/^[0-9a-f]{64}$/.test(token)){
+   heading.textContent='That link doesn\'t look right.';
+   status.textContent='Try opening the link from your email, or return to the signup page.';
+   return;
+ }
+ try{
+   const r=await fetch('https://scgihelnwihjckzzvxyc.supabase.co/functions/v1/nothing-game?action='+action,{
+     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token}),cache:'no-store',referrerPolicy:'no-referrer'
+   });
+   const d=await r.json();
+   if(!r.ok)throw Error(d.error||'That link is no longer valid.');
+   if(action==='confirm_email'){
+     heading.textContent='You\'re on the list.';
+     status.textContent='Email confirmed. We\'ll be in touch when there\'s something worth sharing.';
+   }else{
+     heading.textContent='Done.';
+     status.textContent='You\'re unsubscribed from After All updates.';
+   }
+ }catch(e){
+   heading.textContent='That link didn\'t work.';
+   status.textContent=e.message||'Please return to the signup page.';
+ }
+})();
+</script>
+</body>
+</html>

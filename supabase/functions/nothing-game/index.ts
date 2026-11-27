@@ -94,6 +94,24 @@ if(action==='waitlist'&&req.method==='POST'){
    if(error)throw error;
    return respond({ok:true});
   }
+  if(action==='export_profile'&&req.method==='GET'){
+   const [{data:scores,error:scoreErr},{data:rounds,error:roundErr},{data:subscriptions,error:subErr}]=await Promise.all([
+    db.from('nothing_guest_scores').select('display_name,score,achieved_at').eq('player_id',player.id),
+    db.from('nothing_rounds').select('id,started_at,score,duration,flagged').eq('player_id',player.id).order('started_at',{ascending:false}).limit(100),
+    db.from('nothing_waitlist').select('email,created_at,marketing_consent,unsubscribed_at').eq('player_id',player.id)
+   ]);
+   if(scoreErr||roundErr||subErr)throw scoreErr||roundErr||subErr;
+   return respond({exported_at:new Date().toISOString(),notice:'The most recent 100 game rounds are included. Contact After All for a full data access request.',player:{id:player.id,display_name:player.display_name,created_at:player.created_at},scores:scores||[],rounds:rounds||[],updates:subscriptions||[]});
+  }
+  if(action==='delete_profile'&&req.method==='POST'){
+   const body=await req.json();
+   if(body.confirm!=='DELETE')return respond({error:'Confirm account deletion explicitly.'},400);
+   const {error:waitlistError}=await db.from('nothing_waitlist').delete().eq('player_id',player.id);
+   if(waitlistError)throw waitlistError;
+   const {error:playerError}=await db.from('nothing_guest_players').delete().eq('id',player.id);
+   if(playerError)throw playerError;
+   return respond({deleted:true,notice:'Your game account, personal scores, rounds and associated opt-in contact information have been deleted.'});
+  }
   if(action==='profile'&&req.method==='GET'){
    const {data}=await db.from('nothing_guest_scores').select('score,display_name').eq('player_id',player.id).maybeSingle();
    if(!data)return respond({playerId:player.id,best:0,name:player.display_name,rank:null});

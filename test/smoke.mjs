@@ -115,3 +115,22 @@ test('game sound starts enabled without a sound switch',()=>{
  assert.match(js, /sound\('start'\)/);
  assert.match(js, /function sound\(kind\)\{try\{/);
 });
+
+test('social preview is compatible with WhatsApp and other messaging apps',()=>{
+ const imageUrl='https://becauseafterall.com/social-card-v2.png';
+ assert.match(html, /property="og:image" content="https:\/\/becauseafterall\.com\/social-card-v2\.png"/);
+ assert.match(html, /property="og:image:type" content="image\/png"/);
+ assert.match(html, /property="og:image:width" content="1200"/);
+ assert.match(html, /property="og:image:height" content="630"/);
+ assert.match(html, /name="twitter:card" content="summary_large_image"/);
+ const robots=readFileSync(new URL('robots.txt',here),'utf8');
+ assert.match(robots,/Allow: \//);
+ assert.doesNotMatch(robots,/Disallow: \/\s*$/m);
+ const png=readFileSync(new URL('social-card-v2.png',here));
+ assert.ok(png.byteLength>5000&&png.byteLength<600000);
+ assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+ assert.equal(png.readUInt32BE(16),1200);
+ assert.equal(png.readUInt32BE(20),630);
+ const updates=readFileSync(new URL('updates.html',here),'utf8');
+ assert.ok(updates.includes(imageUrl));
+});

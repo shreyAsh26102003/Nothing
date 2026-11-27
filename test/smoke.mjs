@@ -21,7 +21,7 @@ test('required screens and controls exist',()=>{
 test('rules match 45 seconds and three misses',()=>{
  assert.match(html,/45 SECONDS · 3 MISSES/);
  assert.match(js,/missLimit:3,seconds:45/);
- assert.match(js,/state\.misses>=3/);
+ assert.match(js,/state\.misses>=3/);assert.match(js,/result:reason/);
 });
 test('game retains earlier emoji-style fruit and varied bomb waves',()=>{
  for(const fruit of ['🥭','🍓','🍍','🍌','🍇'])assert.ok(js.includes(fruit));

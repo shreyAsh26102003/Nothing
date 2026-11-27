@@ -16,7 +16,7 @@ test('browser application is syntactically valid and loaded as a defer script',(
  assert.ok(css.length>1000);
 });
 test('required screens and controls exist',()=>{
- for(const id of ['home','play','sound','game','hud','score','time','misses','end','finalScore','again','openBoard','board','ranking','playerName','claimForm','claimButton','share','saveCard','boardClose','boardFromHome','rankHint','claimStatus','yourRank','yourBest','countdown','brandFooter','backHome','more'])assert.match(html,new RegExp('id="'+id+'"'));
+ for(const id of ['home','play','game','hud','score','time','misses','end','finalScore','again','openBoard','board','ranking','playerName','claimForm','claimButton','share','saveCard','boardClose','boardFromHome','rankHint','claimStatus','yourRank','yourBest','countdown','brandFooter','backHome','more'])assert.match(html,new RegExp('id="'+id+'"'));
 });
 test('rules match 45 seconds and three misses',()=>{
  assert.match(html,/45 SECONDS · 3 MISSES/);
@@ -107,4 +107,11 @@ test('player-facing pages do not refer to the retired game name',()=>{
  assert.doesNotMatch(js,/Nothing\./i);
  assert.match(html,/AFTER ALL PRESENTS/);
  assert.match(html,/>PLAY<\/button>/);
+});
+
+test('game sound starts enabled without a sound switch',()=>{
+ assert.doesNotMatch(html, /id="sound"|Sound on|Sound off/i);
+ assert.doesNotMatch(js, /state\.mute|nothing-muted|toggleSound/);
+ assert.match(js, /sound\('start'\)/);
+ assert.match(js, /function sound\(kind\)\{try\{/);
 });

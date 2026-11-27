@@ -74,12 +74,12 @@ The public top 100 is the 100 highest-scoring **non-disabled, non-pending-severe
 
 ## Product email
 
-The updates list stores unverified email addresses and explicit marketing consent separately. No email sender is configured. **Do not start sending campaigns until** a production provider, unsubscribe link, suppression handling, sender identity, deliverability checks, and legal approval are in place. Export only active consented records:
+The updates list stores unverified email addresses and explicit marketing consent separately. An email confirmation integration is implemented using Resend but delivery requires verified sender DNS records and Supabase Edge Function secrets. Do not treat it as active before the provider is connected and tested. **Do not start sending campaigns until** a production provider, unsubscribe link, suppression handling, sender identity, deliverability checks, and legal approval are in place. Export only active consented records:
 
 ```sql
 select email,created_at
 from public.nothing_waitlist
-where marketing_consent=true and unsubscribed_at is null
+where marketing_consent=true and verified=true and unsubscribed_at is null
 order by created_at desc;
 ```
 

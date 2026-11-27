@@ -53,18 +53,18 @@ async function sendConfirmationMessage(id:number,email:string,token:string){
  if(!apiKey||!from)return {emailSent:false,delivery:'not_configured'};
  const link='https://becauseafterall.com/email.html#confirm='+token;
  const leave='https://becauseafterall.com/email.html#unsubscribe='+token;
- const textBody=['AFTER ALL.','','You found us early.','','We\'re making something with fruit. That\'s all we\'re saying for now.','','Confirm you want to hear from us:',link,'','If you didn\'t sign up, you can ignore this email.','','Unsubscribe: '+leave,'','After All.'].join('\n');
+ const textBody=['AFTER ALL.','','Thanks for signing up for updates from After All. We\'re working on a few things involving fruit and we\'ll let you know when we have something to share.','','Please confirm your email address so we know it\'s you:',link,'','If you didn\'t sign up, you can ignore this email.','','Unsubscribe: '+leave].join('\n');
  const html=['<html><body style="margin:0;padding:0;background:#fff0d4;color:#2b1b28;font-family:Arial,Helvetica,sans-serif">',
  '<div style="max-width:560px;margin:0 auto;padding:42px 28px">',
  '<p style="font-size:14px;font-weight:900;letter-spacing:1px">AFTER ALL.</p>',
- '<h1 style="font-size:34px;line-height:1.08;letter-spacing:-1px;margin:44px 0 24px">You found us early.</h1>',
- '<p style="font-size:17px;line-height:1.55">We\'re making something with fruit.<br>That\'s all we\'re saying for now.</p>',
+ '<h1 style="font-size:34px;line-height:1.08;letter-spacing:-1px;margin:44px 0 24px">Thanks for signing up.</h1>',
+ '<p style="font-size:17px;line-height:1.55">We\'re working on a few things involving fruit, and we\'ll email you when we have something to share. Please confirm your address below.</p>',
  '<p style="margin:35px 0"><a href="'+link+'" style="display:inline-block;padding:14px 20px;border-radius:28px;background:#ff705c;border:2px solid #2b1b28;color:#2b1b28;text-decoration:none;font-weight:900;font-size:14px">CONFIRM MY EMAIL</a></p>',
  '<p style="font-size:12px;line-height:1.6;color:#79646b">If you didn\'t sign up, ignore this email.</p>',
  '<p style="margin-top:48px;font-size:12px"><a style="color:#79646b" href="'+leave+'">Unsubscribe</a></p>',
  '</div></body></html>'].join('');
  try{
-  const res=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json','Idempotency-Key':'afterall-confirm-'+id+'-'+token.slice(0,20)},body:JSON.stringify({from,to:[email],subject:'A note from After All.',html,text:textBody,...(Deno.env.get('AFTER_ALL_REPLY_TO')?{reply_to:Deno.env.get('AFTER_ALL_REPLY_TO')}: {})}),signal:AbortSignal.timeout(12000)});
+  const res=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json','Idempotency-Key':'afterall-confirm-'+id+'-'+token.slice(0,20)},body:JSON.stringify({from,to:[email],subject:'Please confirm your email for After All',html,text:textBody,...(Deno.env.get('AFTER_ALL_REPLY_TO')?{reply_to:Deno.env.get('AFTER_ALL_REPLY_TO')}: {})}),signal:AbortSignal.timeout(12000)});
   if(!res.ok){console.warn('afterall-email-provider-rejected',res.status);return {emailSent:false,delivery:'provider_error'}}
   const result=await res.json();
   const {error}=await db.from('nothing_waitlist').update({confirmation_sent_at:new Date().toISOString(),confirmation_message_id:String(result.id||'')}).eq('id',id);

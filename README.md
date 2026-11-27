@@ -17,15 +17,18 @@ Playable fruit-slicing game, hosted separately from becauseafterall.com.
 - Database: `nothing_guest_players`, `nothing_rounds`, `nothing_guest_scores`, `nothing_score_flags`, `nothing_events`, `nothing_waitlist` and private `nothing_reward_review`.
 - All personally identifying contact details and game secrets remain server-side. Browser stores a pseudonymous guest token, not a secret Supabase service-role key. Email list entries are unverified and must **not** be used as proof of identity.
 - Analytics and review queries: `ops/reports.sql`.
-- Automated tests: `npm test`.
+- Automated tests: `npm test` plus `node test/browser.mjs` (Chromium). Both run in the GitHub Actions smoke workflow; failures attempt to upload a browser screenshot.
 
 ## Operational limitations — important before campaign launch
 1. A guest identity is tied to **one browser's local storage**. Clearing storage or changing devices creates a new identity. This is deliberate to avoid the broken email-code flow, but it is not an account-recovery system.
-2. Anti-cheat checks validate server-generated wave events, their positions and scoring, and allow flagging suspicious submissions, but are not cheat-proof. Before **any prizes** are awarded, define eligibility, verify finalists independently, review fraud flags, and publish competition rules.
+2. Anti-cheat checks validate server-generated wave events, their positions and scoring, atomically claim rounds and withhold suspicious scores from the visible leaderboard until manual review. Anonymous-account creation is rate-limited when a trusted client IP is available. These checks are not cheat-proof. Before **any prizes** are awarded, define eligibility, verify finalists independently, review fraud flags, and publish competition rules.
 3. Configure production email delivery and verified identity recovery **before** collecting winner addresses or announcing rewards. The preview's optional updates form currently records consent and an unverified email, and does **not** send confirmation mail.
-4. Test on real iOS Safari, Android Chrome, WhatsApp and Instagram in-app browsers, and pilot with real players. Code smoke tests and simulations are not substitutes.
+4. Test on real iOS Safari, Android Chrome, WhatsApp and Instagram in-app browsers, and pilot with real players. Automated headless Chromium tests are not substitutes for these devices or game-feel testing.
 5. Vercel deploys are currently pushed through the API; the Vercel Git integration still needs access to the public GitHub repository for automatic deploy-on-push. Avoid assuming GitHub commits update the live site.
 6. Custom `becauseafterall.com` domain has **not** been connected. Repository is public.
 
 ## Maintaining the game
 Do not expose service credentials in browser code, version control, or screenshots. Use Supabase SQL Editor for administrative reports, including suspicious scores. Review prize records only in the private schema. Preserve three misses unless the product owner changes the rule.
+
+## Private analytics
+The Supabase project contains a shared internal notebook named **Nothing — Daily Product Pulse** for acquisition, engagement, referrals, scores and unreviewed fraud reports. Never expose its user/contact tables through a public dashboard.

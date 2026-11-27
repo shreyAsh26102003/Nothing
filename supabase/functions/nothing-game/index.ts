@@ -134,7 +134,7 @@ if(action==='waitlist'&&req.method==='POST'){
    const flagged=score>1800||events.length>160;
    const {data:committed,error:commitErr}=await db.rpc('nothing_commit_round',{p_round_id:roundId,p_player_id:player.id,p_name:name,p_score:score,p_events:events,p_duration:endAt,p_flagged:flagged});
    if(commitErr){console.warn('commit round',commitErr.message);return respond({error:'Score could not be saved. Please try again.'},409)}
-   if(flagged)await logFlag(player.id,roundId,'unusually high score');
+   // The atomic database commit inserts review flags in the same transaction as the score.
    return respond(committed);
   }
   return respond({error:'Not found'},404);

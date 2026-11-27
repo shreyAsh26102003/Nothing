@@ -33,7 +33,7 @@ async function begin(){
  const btn=$('play');btn.disabled=true;label('play','GETTING FRUIT READY…');
  sound('start');
  let waves=null,roundId=null;
- try{const r=await Promise.race([(async()=>{await guest();return request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)})})(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Network setup took too long')),2600))]);waves=r.waves;roundId=r.roundId}catch(e){console.warn('Playing offline; score cannot be submitted',e)}
+ try{const r=await Promise.race([(async()=>{await guest();try{return await request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)})}catch(err){if(/session missing/i.test(err.message)){state.guest=null;remove('nothing-guest-v2');await guest();return request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)})}throw err}})(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Network setup took too long')),4400))]);waves=r.waves;roundId=r.roundId}catch(e){console.warn('Playing offline; score cannot be submitted',e)}
  state.starting=false;btn.disabled=false;label('play','PLAY NOTHING.');
  state.waves=waves||localWaves();state.roundId=roundId;state.offline=!roundId;
  state.cursor=0;state.items=[];state.particles=[];state.halves=[];state.popups=[];state.trail=[];state.events=[];state.score=0;state.misses=0;state.combo=0;state.lastHit=-100;state.bomb=null;state.reason='';state.playing=false;state.drag=false;
@@ -49,7 +49,7 @@ function createItem(entry,waveIndex,slot,sec){
 function position(o,t){const d=t-o.sec;if(d<0)return;const W=state.width,H=state.height;o.x=o.entry.x*W+o.entry.vx*W*d;o.y=H+45+o.vy*d+.5*o.g*d*d;o.rotation+=o.spin*.016}
 function splash(o){const col=o.entry.bomb?'#32242a':FRUITS[o.entry.fruit][1];for(let i=0;i<18;i++){const a=Math.random()*Math.PI*2,v=80+Math.random()*230;state.particles.push({x:o.x,y:o.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.36+Math.random()*.34,color:col})}if(!o.entry.bomb){for(const side of [-1,1])state.halves.push({x:o.x,y:o.y,vx:side*(95+Math.random()*80),vy:-80-Math.random()*100,rot:0,side,emoji:FRUITS[o.entry.fruit][0],life:.7})}if(state.particles.length>240)state.particles.splice(0,state.particles.length-240)}
 function hitObjects(a,b){
- if(!state.playing)return;
+ if(!state.playing||Math.hypot(b.x-a.x,b.y-a.y)<12)return;
  const now=elapsed();
  for(const o of state.items){if(o.hit||o.missed)continue;
   const dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((o.x-a.x)*dx+(o.y-a.y)*dy)/den));
@@ -57,10 +57,10 @@ function hitObjects(a,b){
   if(distance>o.r+6)continue;
   o.hit=true;splash(o);
   if(o.entry.bomb){sound('bomb');pulse(60);state.bomb={wave:o.waveIndex,fruit:o.slot,at:now};endGame('bomb');return}
-  const combo=now-state.lastHit<.18?state.combo+1:1;state.combo=combo;state.lastHit=now;
+  const eventAt=Number(now.toFixed(3)),combo=eventAt-state.lastHit<.18?state.combo+1:1;state.combo=combo;state.lastHit=eventAt;
   const earned=10+(combo>=2?5:0);state.score+=earned;sound(combo>=3?'combo':'slice');pulse(13);
   state.popups.push({x:o.x,y:o.y-33,text:combo>=2?'COMBO '+combo+'  +'+earned:'+'+earned,life:.7});
-  if(!state.offline)state.events.push({wave:o.waveIndex,fruit:o.slot,at:Number(now.toFixed(3)),x:Math.round(o.x),y:Math.round(o.y)});
+  if(!state.offline)state.events.push({wave:o.waveIndex,fruit:o.slot,at:eventAt,x:Math.round(o.x),y:Math.round(o.y)});
   label('score',state.score);
  }
 }
@@ -84,7 +84,7 @@ function frame(now){
  label('time',Math.max(0,Math.ceil(state.seconds-sec)));state.raf=requestAnimationFrame(frame);
 }
 function point(e){return{x:e.clientX,y:e.clientY,t:performance.now()}}
-canvas.addEventListener('pointerdown',e=>{if(!state.playing)return;state.drag=true;state.lastPointer=point(e);state.trail=[state.lastPointer];try{canvas.setPointerCapture(e.pointerId)}catch{}hitObjects(state.lastPointer,state.lastPointer)});
+canvas.addEventListener('pointerdown',e=>{if(!state.playing)return;state.drag=true;state.lastPointer=point(e);state.trail=[state.lastPointer];try{canvas.setPointerCapture(e.pointerId)}catch{}});
 canvas.addEventListener('pointermove',e=>{if(!state.drag||!state.playing)return;const p=point(e);hitObjects(state.lastPointer,p);state.lastPointer=p;state.trail.push(p)});
 function pointerUp(){state.drag=false;state.lastPointer=null}
 canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointercancel',pointerUp);
@@ -98,7 +98,7 @@ async function endGame(reason){
  state.pending=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result:reason,bomb:state.bomb}:null;
  if(state.pending)save('nothing-pending-v2',state.pending);else remove('nothing-pending-v2');
  screen('end');
- if(state.name&&state.pending){label('rankHint','Saving your score…');try{const d=await submitScore();label('rankHint','Official rank #'+d.rank+' · Best '+d.best)}catch(e){label('rankHint','Score not saved yet. Open the leaderboard to try again.')}}
+ if(state.name&&state.pending){label('rankHint','Saving your score…');try{const d=await submitScore();label('rankHint',d.pendingReview?'Score received. Being reviewed.':'Official rank #'+d.rank+' · Best '+d.best)}catch(e){label('rankHint','Score not saved yet. Open the leaderboard to try again.')}}
 }
 async function submitScore(){
  if(!state.pending||!state.guest)throw new Error('This round cannot be ranked.');
@@ -111,7 +111,7 @@ async function showBoard(){
  screen('board');state.showAll=false;label('boardMessage','Loading the leaderboard…');$('claim').hidden=!state.pending;label('claimStatus','');$('playerName').value=state.name;
  try{
   const [r,p]=await Promise.all([request('leaderboard','GET',null,false),state.guest?request('profile').catch(()=>null):Promise.resolve(null)]);
-  state.ranking=r.top||[];state.cutoff=r.cutoff;state.profile=p||state.profile;renderBoard();label('boardMessage',r.cutoff!==null?'Top 100 cutoff: '+r.cutoff+' points.':'The top 100 is still filling up.');
+  state.ranking=r.top||[];state.cutoff=r.cutoff;state.profile=p||state.profile;renderBoard();label('boardMessage',r.cutoff!==null?'Top 100 cutoff: '+r.cutoff+' points. '+(state.profile?.best?'You need '+Math.max(0,r.cutoff+10-state.profile.best)+' more to move ahead of #100.':''):'The top 100 is still filling up.');
  }catch(e){state.ranking=[];state.cutoff=null;renderBoard();label('boardMessage','The leaderboard is temporarily unavailable. You can still play.')}
 }
 function renderBoard(){

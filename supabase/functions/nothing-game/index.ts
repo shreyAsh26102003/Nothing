@@ -50,7 +50,7 @@ Deno.serve(async (req:Request)=>{
  if(req.method==='OPTIONS')return new Response('',{headers});
  const action=new URL(req.url).searchParams.get('action')||'leaderboard';
  try {
-  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v7'});
+  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v13'});
   if(action==='leaderboard'&&req.method==='GET')return respond(await top());
   if(action==='register'&&req.method==='POST'){
    const ip=req.headers.get('cf-connecting-ip')||req.headers.get('x-real-ip');
@@ -84,7 +84,14 @@ if(action==='waitlist'&&req.method==='POST'){
    if(error)throw error;
    return respond({accepted:true,verified:false});
   }
-    if(action==='profile'&&req.method==='GET'){
+    if(action==='unsubscribe'&&req.method==='POST'){
+   const b=await req.json(),email=String(b.email||'').trim().toLowerCase();
+   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email.'},400);
+   const {error}=await db.from('nothing_waitlist').update({unsubscribed_at:new Date().toISOString(),marketing_consent:false}).eq('player_id',player.id).eq('email_normalized',email).is('unsubscribed_at',null);
+   if(error)throw error;
+   return respond({ok:true});
+  }
+  if(action==='profile'&&req.method==='GET'){
    const {data}=await db.from('nothing_guest_scores').select('score,display_name').eq('player_id',player.id).maybeSingle();
    if(!data)return respond({playerId:player.id,best:0,name:player.display_name,rank:null});
    const {data:rank,error:rankError}=await db.rpc('nothing_rank_guest',{p_player_id:player.id});

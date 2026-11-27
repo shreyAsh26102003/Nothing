@@ -95,8 +95,9 @@ async function endGame(reason){
  label('finalScore',state.score);label('best','Personal best: '+best);
  label('resultHeading',state.score>previousBest&&state.score>0?'New personal best.':reason==='bomb'?'A little explosive.':reason==='misses'?'That was close.':"Time's up.");
  label('rankHint',state.offline?'This round was offline, so it cannot be ranked.':'');
- state.pending=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result:reason,bomb:state.bomb}:null;
- if(state.pending)save('nothing-pending-v2',state.pending);else remove('nothing-pending-v2');
+ const thisRound=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result:reason,bomb:state.bomb}:null;
+ if(thisRound&&(!state.pending||thisRound.score>=state.pending.score))state.pending=thisRound;
+ if(state.pending)save('nothing-pending-v2',state.pending);
  screen('end');
  if(state.name&&state.pending){label('rankHint','Saving your score…');try{const d=await submitScore();label('rankHint',d.pendingReview?'Score received. Being reviewed.':'Official rank #'+d.rank+' · Best '+d.best)}catch(e){label('rankHint','Score not saved yet. Open the leaderboard to try again.')}}
 }
@@ -125,7 +126,7 @@ function renderBoard(){
  label('yourRank',state.profile?.rank?'#'+state.profile.rank:'—');
  label('boardNote',state.guest?'Scores stay tied to this browser. Clear browser data and your identity cannot be recovered.':'Play a round to join the leaderboard.');
 }
-$('claimForm').onsubmit=async e=>{e.preventDefault();track('claim_requested');const b=$('claimButton');b.disabled=true;label('claimStatus','Saving your score…');try{const result=await submitScore();$('claim').hidden=true;label('boardMessage',result.pendingReview?'Score saved and awaiting review.':'Saved. You are ranked #'+result.rank+'.');await showBoard()}catch(err){label('claimStatus',err.message||'Could not save the score. Try again.')}finally{b.disabled=false}};
+$('claimForm').onsubmit=async e=>{e.preventDefault();track('claim_requested');const b=$('claimButton');b.disabled=true;label('claimStatus','Saving your score…');try{const result=await submitScore();$('claim').hidden=true;await showBoard();label('boardMessage',result.pendingReview?'Score saved and awaiting review.':'Saved. You are ranked #'+result.rank+'.')}catch(err){label('claimStatus',err.message||'Could not save the score. Try again.')}finally{b.disabled=false}};
 $('more').onclick=()=>{state.showAll=!state.showAll;renderBoard()};
 $('play').onclick=begin;$('again').onclick=begin;$('openBoard').onclick=showBoard;$('boardFromHome').onclick=showBoard;$('boardClose').onclick=()=>screen(state.score||state.reason?'end':'home');
 $('backHome').onclick=()=>screen('home');

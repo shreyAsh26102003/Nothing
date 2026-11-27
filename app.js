@@ -1,5 +1,6 @@
 (()=>{'use strict';
 const API='https://scgihelnwihjckzzvxyc.supabase.co/functions/v1/nothing-game';
+const referral=new URLSearchParams(location.search).get('ref')||'';
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d');
 const FRUITS=[['🥭','#ffa92b'],['🍓','#f45172'],['🍍','#ffcb3d'],['🍌','#f5d461'],['🍇','#7544a3']];
@@ -18,7 +19,7 @@ label('sound',state.mute?'Sound off':'Sound on');$('sound').setAttribute('aria-p
 function resize(){const w=innerWidth,h=innerHeight;state.width=w;state.height=h;state.dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*state.dpr);canvas.height=Math.round(h*state.dpr);ctx.setTransform(state.dpr,0,0,state.dpr,0,0);ctx.fillStyle='#fff0d4';ctx.fillRect(0,0,w,h)}
 addEventListener('resize',resize);resize();
 async function request(action,method='GET',body=null,secured=true){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),6000);try{const token=secured?state.guest?.token:null;const response=await fetch(API+'?action='+encodeURIComponent(action),{method,headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:body===null?undefined:JSON.stringify(body),signal:controller.signal,cache:'no-store'});const result=await response.json();if(!response.ok)throw new Error(result.error||'The connection did not work.');return result}finally{clearTimeout(timer)}}
-function track(event){request('track','POST',{event,anonymousId:state.anonymous},false).catch(()=>{})}
+function track(event){request('track','POST',{event,anonymousId:state.anonymous,referrerId:referral},false).catch(()=>{})}
 function report(err){console.error(err);track('error')}
 window.addEventListener('error',e=>report(e.message||'Browser error'));
 window.addEventListener('unhandledrejection',e=>report(e.reason||'Network error'));
@@ -90,9 +91,9 @@ canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointerc
 document.addEventListener('visibilitychange',()=>{if(!state.playing)return;if(document.hidden){state.pausedAt=performance.now();cancelAnimationFrame(state.raf);pointerUp()}else if(state.pausedAt){const now=performance.now();state.startAt+=now-state.pausedAt;state.pausedAt=0;state.lastFrame=now;state.raf=requestAnimationFrame(frame)}});
 async function endGame(reason){
  if(!state.playing)return;const endAt=Math.min(45,elapsed());state.playing=false;cancelAnimationFrame(state.raf);state.reason=reason;track('ended');sound(reason==='time'?'start':'miss');
- const best=Math.max(state.score,Number(getStored('nothing-local-best-v2')||0));save('nothing-local-best-v2',best);
+ const previousBest=Number(getStored('nothing-local-best-v2')||0),best=Math.max(state.score,previousBest);save('nothing-local-best-v2',best);
  label('finalScore',state.score);label('best','Personal best: '+best);
- label('resultHeading',reason==='bomb'?'A little explosive.':reason==='misses'?'That was close.':"Time's up.");
+ label('resultHeading',state.score>previousBest&&state.score>0?'New personal best.':reason==='bomb'?'A little explosive.':reason==='misses'?'That was close.':"Time's up.");
  label('rankHint',state.offline?'This round was offline, so it cannot be ranked.':'');
  state.pending=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result,bomb:state.bomb}:null;
  if(state.pending)save('nothing-pending-v2',state.pending);else remove('nothing-pending-v2');
@@ -129,7 +130,7 @@ $('more').onclick=()=>{state.showAll=!state.showAll;renderBoard()};
 $('play').onclick=begin;$('again').onclick=begin;$('openBoard').onclick=showBoard;$('boardFromHome').onclick=showBoard;$('boardClose').onclick=()=>screen(state.score||state.reason?'end':'home');
 $('backHome').onclick=()=>screen('home');
 const challenge=Number(new URLSearchParams(location.search).get('challenge'));if(Number.isFinite(challenge)&&challenge>0&&challenge<10000)label('intro','Someone scored '+challenge+'. Think you can beat it?');
-function scoreLink(){return location.origin+location.pathname+'?challenge='+state.score}
+function scoreLink(){const q=new URLSearchParams({challenge:String(state.score)});if(state.guest?.playerId)q.set('ref',state.guest.playerId);return location.origin+location.pathname+'?'+q.toString()}
 $('share').onclick=async()=>{track('shared');const text='I scored '+state.score+' playing Nothing. Think you can beat that?';const url=scoreLink();if(navigator.share){try{await navigator.share({title:'Nothing. — After All',text,url});return}catch(err){if(err.name==='AbortError')return}}try{await navigator.clipboard.writeText(text+' '+url);label('share','LINK COPIED');setTimeout(()=>label('share','CHALLENGE A FRIEND'),1700)}catch{prompt('Copy your challenge',text+' '+url)}};
 $('saveCard').onclick=()=>{const c=document.createElement('canvas');c.width=1080;c.height=1350;const p=c.getContext('2d');p.fillStyle='#fff0d4';p.fillRect(0,0,1080,1350);p.fillStyle='#f4d15e';p.beginPath();p.arc(1010,145,250,0,Math.PI*2);p.fill();p.fillStyle='#ffb6a5';p.beginPath();p.arc(90,1140,270,0,Math.PI*2);p.fill();p.fillStyle='#2b1b28';p.textAlign='center';p.font='900 40px Arial';p.fillText('AFTER ALL PRESENTS',540,170);p.font='900 160px Arial';p.fillText('Nothing.',540,390);p.font='900 40px Arial';p.fillText('I SCORED',540,560);p.font='900 270px Arial';p.fillText(String(state.score),540,845);p.font='900 51px Arial';p.fillText('Think you can beat that?',540,960);p.font='bold 35px Arial';p.fillText('nothing-after-all.vercel.app',540,1170);try{const a=document.createElement('a');a.download='nothing-score-'+state.score+'.png';a.href=c.toDataURL('image/png');document.body.append(a);a.click();a.remove()}catch(err){report(err)}};
 screen('home');

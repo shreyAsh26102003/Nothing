@@ -13,10 +13,10 @@ async function probe(label,url,check){
 }
 let failed=false;
 for(const [label,url,check] of [
- ['game HTML',base+'/',body=>body.includes('Nothing.')&&body.includes('/app.js')],
+ ['game HTML',base+'/',body=>body.includes('AFTER ALL PRESENTS')&&body.includes('/app.js')&&!body.includes('Nothing.')],
  ['game JS',base+'/app.js',body=>body.includes('state.misses>=3')&&body.includes('hitObjects')],
  ['game CSS',base+'/styles.css',body=>body.includes('--cream')],
- ['privacy',base+'/privacy.html',body=>body.includes('Privacy and Nothing.')],
+ ['privacy',base+'/privacy.html',body=>body.includes('<h2>Privacy</h2>')],
  ['updates',base+'/updates.html',body=>body.includes('updatesForm')],
  ['email confirmation page',base+'/email.html',body=>body.includes('confirm_email')&&body.includes('unsubscribe_email')],
  ['API health',api+'?action=health',body=>{try{return JSON.parse(body).ok===true}catch{return false}}],

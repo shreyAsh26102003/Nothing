@@ -96,6 +96,27 @@ Guest identity is intentionally tied to browser localStorage. Do not represent i
 - Keep contact exports private; never publish real participant emails, tokens, IP addresses, review notes or partner addresses.
 - Use `ops/reports.sql` for manual metrics, and see `docs/ADMIN-RUNBOOK.md` for moderation.
 
+## Supporting operating documents
+
+- [Release acceptance](RELEASE-CHECKLIST.md) — canonical sign-off gates; checkboxes must be evidence-based.
+- [Moderator and admin runbook](ADMIN-RUNBOOK.md) — review, approve/disqualify, export and incident procedures.
+- [Beta test kit](BETA_TEST.md) — 20–30-person testing script and data columns.
+- [Balancing plan](GAMEPLAY_BALANCING.md) — progression parameters and tune-by-observation method.
+- [Competition terms draft](COMPETITION_RULES_DRAFT.md) — intentionally unapproved legal template.
+- [Launch copy](LAUNCH_COPY.md) — quiet seeding, challenge-sharing and support scripts.
+- [Incident response](INCIDENT_RESPONSE.md) — severity, recovery and incident review.
+- `ops/admin.sql` — executable **read-only** inspection queries plus commented-out, audit-logged admin write templates.
+- `ops/maintenance.sql` — read-only retention inventory and disabled deletion examples.
+- `scripts/live-flow.mjs` — disposable live account → missed-fruit game → score submission → leaderboard → delete journey.
+- `.github/workflows/live-flow.yml` — one-time and manually triggered live integration workflow.
+
+## Verification evidence (27 November 2026)
+
+- A live score journey passed in GitHub Actions at commit `69e1635`: a disposable guest was registered, an eligible three-miss game submitted, the profile and leaderboard queried, then the guest deleted.
+- GitHub Actions `Game smoke tests` and `Nothing. production health` also passed for that commit.
+- A previous live test exposed a genuine registration HTTP 500 (undefined rate-limiter secret name); it was fixed in Supabase Edge Function version 18 and the succeeding integration test confirmed the fix.
+- Future source changes require **new** CI verification. A green test from a previous commit does not certify newly edited files.
+
 ## Release blockers
 
 Refer to `docs/RELEASE-CHECKLIST.md`. Real iOS/Android/in-app testing, human gameplay beta, winner identity verification, legal sign-off and external email service access require others. These cannot be marked done from code changes alone.

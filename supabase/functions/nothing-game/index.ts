@@ -1,0 +1,27 @@
+import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+const url=Deno.env.get('SUPABASE_URL')!, key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const admin=createClient(url,key,{auth:{persistSession:false}});
+const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Content-Type':'application/json'};
+function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:cors})}
+function rand(seed:number){let t=seed>>>0;return ()=>{t+=0x6D2B79F5;let x=t;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return ((x^x>>>14)>>>0)/4294967296}}
+function layout(seed:number){const rnd=rand(seed);const waves=[];for(let i=0;i<52;i++){const sec=i*.88+.65,count=sec<10?1:sec<22?2:sec<34?2:3;let bomb=sec>8&&count>1&&rnd()<(sec<22?.17:sec<34?.28:.4)?Math.floor(rnd()*count):-1;const entries=[];for(let n=0;n<count;n++)entries.push({bomb:n===bomb,lane:n,count,fruit:Math.floor(rnd()*5),offset:(rnd()-.5)*.08});waves.push({sec,entries})}return waves}
+Deno.serve(async req=>{if(req.method==='OPTIONS')return new Response('',{headers:cors});try{
+const action=new URL(req.url).searchParams.get('action')||'leaderboard';
+if(action==='leaderboard'&&req.method==='GET'){const {data,error}=await admin.from('nothing_scores').select('user_id,display_name,score,updated_at').order('score',{ascending:false}).order('updated_at',{ascending:true}).limit(100);if(error)throw error;return json({top:data.map((x,i)=>({rank:i+1,userId:x.user_id,name:x.display_name,score:x.score})),cutoff:data.length===100?data[99].score:null,entries:data.length})}
+if(action==='start'&&req.method==='POST'){const seed=Math.floor(Math.random()*4294967295);const {data,error}=await admin.from('nothing_sessions').insert({seed:String(seed)}).select('id,started_at').single();if(error)throw error;return json({sessionId:data.id,startedAt:data.started_at,seed,waves:layout(seed)})}
+const token=req.headers.get('authorization')?.replace(/^Bearer /i,'');if(!token)return json({error:'Sign in to submit an official score'},401);
+const {data:auth,error:authError}=await admin.auth.getUser(token);if(authError||!auth.user||!auth.user.email_confirmed_at)return json({error:'Please verify your email first'},401);const user=auth.user;
+
+if(action==='submit'&&req.method==='POST'){const body=await req.json();const name=String(body.name||'').trim().slice(0,24),score=Number(body.score),events=body.events,sessionId=String(body.sessionId||'');if(!/^[A-Za-z0-9 _.-]{2,24}$/.test(name))return json({error:'Choose a name between 2 and 24 characters'},400);
+if(!Number.isInteger(score)||score<0||score>10000||!Array.isArray(events)||events.length>250||!events.every(e=>Number.isInteger(e.wave)&&e.wave>=0&&e.wave<52&&Number.isInteger(e.fruit)&&e.fruit>=0&&e.fruit<3&&Number.isFinite(e.at)&&e.at>=0&&e.at<=47))return json({error:'Invalid score data'},400);
+const {data:session,error}=await admin.from('nothing_sessions').select('*').eq('id',sessionId).is('user_id',null).single();if(error||!session||session.used_at||new Date(session.expires_at).getTime()<Date.now())return json({error:'This game session is invalid or expired'},400);
+const age=(Date.now()-new Date(session.started_at).getTime())/1000;if(age<4||age>180)return json({error:'Game session duration invalid'},400);
+const waves=layout(Number(session.seed));const seen=new Set();let calc=0,combo=0,lastAt=-100;for(const e of events){const wave=waves[e.wave],item=wave.entries[e.fruit],k=e.wave+':'+e.fruit;if(!item||item.bomb||seen.has(k)||e.at<wave.sec-.25||e.at>wave.sec+2.75||e.at>age+1||e.at<lastAt) return json({error:'Score could not be verified'},400);seen.add(k);combo=e.at-lastAt<.18?combo+1:1;calc+=10+(combo>=2?5:0);lastAt=e.at}
+if(calc!==score)return json({error:'Score mismatch'},400);
+const {data:claimed,error:claimErr}=await admin.from('nothing_sessions').update({used_at:new Date().toISOString(),user_id:user.id,score,events}).eq('id',sessionId).is('used_at',null).select('id');if(claimErr||!claimed?.length)return json({error:'This session was already submitted'},409);
+await admin.from('nothing_players').upsert({user_id:user.id,display_name:name,marketing_opt_in:body.marketing===true});
+const {data:existing}=await admin.from('nothing_scores').select('score').eq('user_id',user.id).maybeSingle();
+if(!existing||score>existing.score){const {error:writeErr}=await admin.from('nothing_scores').upsert({user_id:user.id,display_name:name,score,updated_at:new Date().toISOString()});if(writeErr)throw writeErr}
+const {count}=await admin.from('nothing_scores').select('*',{count:'exact',head:true}).gt('score',Math.max(score,existing?.score||0));
+return json({accepted:true,score,best:Math.max(score,existing?.score||0),rank:(count??0)+1})}
+return json({error:'Not found'},404)}catch(e){return json({error:'Server unavailable'},500)}});

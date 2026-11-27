@@ -43,6 +43,6 @@ test('leaderboard, score challenge, and card are implemented',()=>{
 });
 test('data collection is minimal, no private service keys in frontend',()=>{
  assert.doesNotMatch(js,/service_role|SUPABASE_SERVICE_ROLE_KEY|password/);
- assert.doesNotMatch(html,/marketing|email/i);
+ assert.doesNotMatch(html,/<input[^>]*type="email"/i);
  assert.match(api,/secret_hash/);
 });

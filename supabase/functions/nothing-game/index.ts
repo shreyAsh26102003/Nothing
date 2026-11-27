@@ -58,17 +58,29 @@ Deno.serve(async (req:Request)=>{
    return respond({playerId:data.id,token});
   }
   if(action==='track'&&req.method==='POST'){
-   const body=await req.json(),event=String(body.event||''),anon=String(body.anonymousId||'');
+   const body=await req.json(),event=String(body.event||''),anon=String(body.anonymousId||''),ref=String(body.referrerId||'');
    if(!['visit','started','ended','replayed','shared','claim_requested','claim_verified','error'].includes(event)||!/^[a-zA-Z0-9-]{16,64}$/.test(anon))return respond({error:'Invalid event'},400);
    const {count}=await db.from('nothing_events').select('*',{count:'exact',head:true}).eq('anonymous_id',anon).gte('created_at',new Date(Date.now()-86400000).toISOString());
    if((count||0)>250)return respond({error:'Rate limit'},429);
-   const {error}=await db.from('nothing_events').insert({event_name:event,anonymous_id:anon,session_id:null});
+   const {error}=await db.from('nothing_events').insert({event_name:event,anonymous_id:anon,session_id:null,referrer_id:/^[0-9a-f-]{36}$/i.test(ref)?ref:null});
    if(error)throw error;
    return respond({ok:true});
   }
   const player=await readPlayer(req);
   if(!player)return respond({error:'Session missing. Open the game again.'},401);
-  if(action==='profile'&&req.method==='GET'){
+if(action==='waitlist'&&req.method==='POST'){
+   const b=await req.json(),email=String(b.email||'').trim().toLowerCase();
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email address.'},400);
+   if(b.consent!==true)return respond({error:'Please confirm that you want emails from After All.'},400);
+   const {count}=await db.from('nothing_waitlist').select('*',{count:'exact',head:true}).eq('player_id',player.id).gte('created_at',new Date(Date.now()-86400000).toISOString());
+   if((count||0)>=3)return respond({error:'Too many attempts. Try another day.'},429);
+   const {data:existing}=await db.from('nothing_waitlist').select('id').eq('email_normalized',email).maybeSingle();
+   if(existing)return respond({accepted:true,already:true,verified:false});
+   const {error}=await db.from('nothing_waitlist').insert({player_id:player.id,email,marketing_consent:true,source:'nothing'});
+   if(error)throw error;
+   return respond({accepted:true,verified:false});
+  }
+    if(action==='profile'&&req.method==='GET'){
    const {data}=await db.from('nothing_guest_scores').select('score,display_name').eq('player_id',player.id).maybeSingle();
    if(!data)return respond({playerId:player.id,best:0,name:player.display_name,rank:null});
    const {count}=await db.from('nothing_guest_scores').select('*',{count:'exact',head:true}).gt('score',data.score);

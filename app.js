@@ -60,7 +60,7 @@ function hitObjects(a,b){
   const eventAt=Number(now.toFixed(3)),combo=eventAt-state.lastHit<.18?state.combo+1:1;state.combo=combo;state.lastHit=eventAt;
   const earned=10+(combo>=2?5:0);state.score+=earned;sound(combo>=3?'combo':'slice');pulse(13);
   state.popups.push({x:o.x,y:o.y-33,text:combo>=2?'COMBO '+combo+'  +'+earned:'+'+earned,life:.7});
-  if(!state.offline)state.events.push({wave:o.waveIndex,fruit:o.slot,at:eventAt,x:Math.round(o.x),y:Math.round(o.y)});
+  if(!state.offline)state.events.push({wave:o.waveIndex,fruit:o.slot,at:eventAt,x:Math.round(o.x),y:Math.round(o.y),x0:Math.round(a.x),y0:Math.round(a.y),x1:Math.round(b.x),y1:Math.round(b.y)});
   label('score',state.score);
  }
 }

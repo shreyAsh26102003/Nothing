@@ -54,7 +54,7 @@ group by 1,2 order by 1 desc,2;
 
 -- Current separate optional updates list; all addresses are unverified.
 select email,marketing_consent,verified,created_at
-from public.nothing_waitlist where marketing_consent=true
+from public.nothing_waitlist where marketing_consent=true and verified=true
 order by created_at desc;
 
 -- Reward records are PRIVATE, and should only be populated after competition rules

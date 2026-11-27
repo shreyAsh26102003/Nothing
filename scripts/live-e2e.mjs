@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 
+// Production-backed disposable integration test. Never print or persist guest bearer tokens.
 const ROOT='https://scgihelnwihjckzzvxyc.supabase.co/functions/v1/nothing-game';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let guest=null;

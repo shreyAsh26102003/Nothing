@@ -86,7 +86,7 @@ if(action==='waitlist'&&req.method==='POST'){
   }
     if(action==='unsubscribe'&&req.method==='POST'){
    const b=await req.json(),email=String(b.email||'').trim().toLowerCase();
-   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email.'},400);
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email.'},400);
    const {error}=await db.from('nothing_waitlist').update({unsubscribed_at:new Date().toISOString(),marketing_consent:false}).eq('player_id',player.id).eq('email_normalized',email).is('unsubscribed_at',null);
    if(error)throw error;
    return respond({ok:true});

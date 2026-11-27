@@ -78,3 +78,25 @@ test('After All teaser is poetic, accessible, and separate from game sign-up',()
  assert.match(teaser,/https:\/\/becauseafterall\.com\/social-card\.svg/);
  assert.match(html,/https:\/\/becauseafterall\.com\/social-card\.svg/);
 });
+
+test('email confirmation is server-side, consent-based and not implicitly verified',()=>{
+ const page=readFileSync(new URL('email.html',here),'utf8');
+ const updates=readFileSync(new URL('updates.html',here),'utf8');
+ assert.match(page,/confirm_email/);
+ assert.match(page,/unsubscribe_email/);
+ assert.match(updates,/id="consent"/);
+ assert.match(updates,/data\.emailSent/);
+ assert.match(api,/RESEND_API_KEY/);
+ assert.match(api,/AFTER_ALL_EMAIL_FROM/);
+ assert.match(api,/attemptConfirmation/);
+ assert.match(api,/confirm_email/);
+ assert.match(api,/confirmation_token_hash/);
+ assert.match(api,/confirmation_expires_at/);
+ assert.doesNotMatch(updates,/RESEND_API_KEY/);
+ assert.doesNotMatch(page,/RESEND_API_KEY/);
+ for(const content of [page,updates]){
+   const scripts=[...content.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+   assert.ok(scripts.length>0);
+   for(const m of scripts)new Script(m[1]);
+ }
+});

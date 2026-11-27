@@ -1,0 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { Script } from 'node:vm';
+import assert from 'node:assert/strict';
+import test from 'node:test';
+const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+test('game script parses',()=>{assert.ok(script,'inline game script missing');new Script(script)});
+test('game has working controls',()=>{for(const id of ['play','again','share','saveCard','game','score','time','misses','end','claimForm','claimName','claimEmail','claimStatus','leaders'])assert.match(html,new RegExp('id="'+id+'"'))});
+test('three misses, forty-five seconds',()=>{assert.match(html,/id="misses">0\/3/);assert.match(html,/misses>=3/);assert.match(html,/elapsed>=45/)});
+test('score sessions and email verification',()=>{assert.match(html,/action=start|api\('start'/);assert.match(html,/api\('submit'/);assert.match(html,/auth\('otp'/);assert.match(html,/auth\('verify'/)});
+test('share and browser audio',()=>{assert.match(html,/id="sound"/);assert.match(html,/id="saveCard"/);assert.match(html,/\?challenge=/)});

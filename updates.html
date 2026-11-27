@@ -1,11 +1,104 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fff0d4"><title>Hear from After All — Nothing.</title><link rel="stylesheet" href="/styles.css"><link rel="icon" href="/favicon.svg" type="image/svg+xml"></head>
-<body style="overflow:auto;min-height:100dvh"><main class="overlay" style="position:relative;min-height:100dvh"><section class="panel"><div class="kicker">AFTER ALL</div><h2>Something's coming.</h2><p>Want to hear when it's ready? Leave your email. This is separate from playing Nothing. and joining the leaderboard.</p>
-<form id="updatesForm" style="display:grid;gap:14px;text-align:left;margin:20px 0"><label style="font-weight:700">Email address<input type="email" id="email" autocomplete="email" required maxlength="254" placeholder="you@example.com" style="margin-top:8px;display:block;width:100%;border:2px solid #2b1b28;border-radius:12px;padding:13px"></label><label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5"><input required id="consent" type="checkbox" style="margin-top:4px">I agree to receive occasional emails about After All. I can unsubscribe later.</label><button class="btn" id="join" type="submit">KEEP ME POSTED</button></form>
-<p role="status" aria-live="polite" id="status" class="subtle"></p><details style="margin:18px 0;font-size:13px;text-align:left"><summary style="cursor:pointer;font-weight:bold">Unsubscribe from updates</summary><p>If you signed up in this browser, you can remove your email from the updates list.</p><form id="leaveForm" style="display:grid;gap:10px"><input type="email" id="leaveEmail" required placeholder="Email to unsubscribe" autocomplete="email" style="border:2px solid #2b1b28;border-radius:12px;padding:13px"><button class="btn alt" id="leaveButton" type="submit">UNSUBSCRIBE</button></form><p class="subtle" id="leaveStatus" aria-live="polite"></p></details><p class="subtle">No verification code is required. Your email won't be used for game rankings or prizes.</p><p><a href="/" class="text-button">Back to Nothing.</a> · <a href="/privacy.html" class="text-button">Privacy</a></p></section></main>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff0d4">
+  <meta name="description" content="A good thing has been growing for a very long time. We're wondering what comes next. An idea from After All.">
+  <meta property="og:title" content="Something good is growing. — After All">
+  <meta property="og:description" content="What if the original indulgence had a second act?">
+  <meta property="og:image" content="https://nothing-after-all.vercel.app/social-card.svg">
+  <title>Something good is growing. — After All</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    html,body{height:auto;min-height:100%;overflow:auto;overscroll-behavior:auto}
+    body.story-page{min-height:100dvh;background:#fff0d4;color:#2b1b28}
+    .story-shell{max-width:840px;margin:0 auto;padding:clamp(22px,4vw,44px) clamp(19px,5vw,52px) 70px}
+    .story-nav{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .story-brand{font-size:clamp(17px,3vw,23px);font-weight:900;letter-spacing:-.8px}
+    .story-back{font-size:11px;font-weight:900;letter-spacing:.9px;color:#2b1b28;text-decoration:none;border-bottom:2px solid currentColor;padding:7px 0}
+    .story-back:hover{text-decoration:none;opacity:.65}
+    .story-main{margin:clamp(48px,10vw,94px) auto 0;max-width:610px}
+    .story-eyebrow{display:block;font-size:10px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:18px}
+    .story-heading{font-size:clamp(53px,9.4vw,83px);line-height:.99;letter-spacing:-.075em;margin:0 0 clamp(34px,6vw,55px);font-weight:900}
+    .story-poem{font-size:clamp(17px,2.8vw,22px);font-weight:500;line-height:1.5;letter-spacing:-.025em}
+    .story-poem p{margin:0 0 24px}
+    .story-poem .turn{font-weight:800}
+    .story-poem .question{font-size:clamp(23px,4vw,32px);font-weight:900;line-height:1.2;letter-spacing:-.045em;margin:23px 0 25px}
+    .story-poem .signature{font-size:15px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;margin-top:28px}
+    .story-rule{border:0;height:2px;background:#2b1b28;opacity:.18;margin:clamp(44px,8vw,74px) 0 30px}
+    .story-signup h2{font-size:clamp(26px,5vw,36px);line-height:1.15;letter-spacing:-.045em;margin:0 0 9px}
+    .story-signup .signup-detail{color:#725d61;font-size:14px;max-width:430px;margin:0 0 22px}
+    .story-email-row{display:flex;gap:10px;align-items:stretch}
+    .story-email-row input{min-width:0;flex:1;width:100%;min-height:54px;padding:14px 16px;border:2px solid #2b1b28;border-radius:12px;background:#fffdf6;font-size:16px}
+    .story-email-row .btn{font-size:13px;letter-spacing:.2px;padding:12px 18px;box-shadow:3px 3px 0 #2b1b28;white-space:nowrap}
+    .story-consent{display:flex;align-items:flex-start;gap:10px;max-width:490px;font-size:12px;line-height:1.5;margin:16px 0 18px;color:#66545a}
+    .story-consent input{flex:none;width:17px;height:17px;margin:1px 0 0;accent-color:#2b1b28}
+    .story-status{font-size:13px;min-height:20px;font-weight:700;margin-top:13px}
+    .story-bottom{font-size:12px;color:#76636b;margin-top:26px}
+    .story-bottom a{color:#2b1b28;text-underline-offset:3px}
+    .story-leave{border-top:1px solid #dbc3b0;margin-top:19px;padding-top:17px}
+    .story-leave summary{cursor:pointer;font-weight:700;font-size:12px}
+    .story-leave p{font-size:12px;margin:10px 0}
+    .story-leave form{display:flex;gap:9px;flex-wrap:wrap}
+    .story-leave input{flex:1;min-width:190px;border:2px solid #2b1b28;border-radius:9px;padding:12px;background:#fffdf6}
+    .story-leave .btn{font-size:12px;padding:8px 14px;min-height:43px;box-shadow:none}
+    @media(max-width:480px){.story-main{margin-top:52px}.story-heading{letter-spacing:-.06em}.story-poem p{margin-bottom:19px}.story-email-row{flex-direction:column}.story-email-row .btn{width:100%;min-height:52px}.story-leave form{display:grid}.story-consent{font-size:12px}}
+    @media(prefers-reduced-motion:no-preference){.story-main{animation:story-enter .7s ease both}@keyframes story-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}}
+  </style>
+</head>
+<body class="story-page">
+  <div class="story-shell">
+    <nav class="story-nav" aria-label="Navigation">
+      <span class="story-brand">AFTER ALL.</span>
+      <a class="story-back" href="/">← BACK TO NOTHING.</a>
+    </nav>
+    <main class="story-main">
+      <span class="story-eyebrow">A SMALL THOUGHT</span>
+      <h1 class="story-heading">Something good<br>is growing.</h1>
+      <div class="story-poem">
+        <p>Before anyone made a treat,<br>there was already one growing on a tree.</p>
+        <p>Bright without trying.<br>Sweet without asking.<br>Almost unfairly good.</p>
+        <p>Fruit has been doing just fine<br>for a very long time.</p>
+        <p class="turn">We just had a question.</p>
+        <p class="question">What if the original indulgence<br>had a second act?</p>
+        <p>We're finding out.</p>
+        <p class="signature">After All.</p>
+      </div>
+      <hr class="story-rule">
+      <section class="story-signup" aria-labelledby="signup-title">
+        <h2 id="signup-title">You'll want to hear about this.</h2>
+        <p class="signup-detail">A little note when there's something worth sharing. Nothing more.</p>
+        <form id="updatesForm">
+          <div class="story-email-row">
+            <label for="email" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Your email address</label>
+            <input type="email" id="email" autocomplete="email" required maxlength="254" placeholder="Your email address">
+            <button class="btn" id="join" type="submit">KEEP ME POSTED</button>
+          </div>
+          <label class="story-consent"><input required id="consent" type="checkbox"><span>I'd like to receive occasional emails from After All. I can unsubscribe anytime.</span></label>
+        </form>
+        <p role="status" aria-live="polite" id="status" class="story-status"></p>
+        <p class="story-bottom">No verification code. No daily emails. Just good news, eventually.</p>
+        <details class="story-leave">
+          <summary>Already signed up? Manage emails.</summary>
+          <p>You can unsubscribe using the same browser where you signed up.</p>
+          <form id="leaveForm">
+            <input type="email" id="leaveEmail" autocomplete="email" required maxlength="254" placeholder="Email to unsubscribe" aria-label="Email to unsubscribe">
+            <button class="btn alt" id="leaveButton" type="submit">UNSUBSCRIBE</button>
+          </form>
+          <p id="leaveStatus" role="status" aria-live="polite"></p>
+        </details>
+        <p class="story-bottom"><a href="/privacy.html">Privacy</a> · <a href="/">Back to Nothing.</a></p>
+      </section>
+    </main>
+  </div>
 <script>
 const API='https://scgihelnwihjckzzvxyc.supabase.co/functions/v1/nothing-game';
 function getGuest(){try{return JSON.parse(localStorage.getItem('nothing-guest-v2')||'null')}catch{return null}}
 document.getElementById('updatesForm').onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('join'),status=document.getElementById('status');btn.disabled=true;status.textContent='Adding you…';try{let g=getGuest();if(!g?.token){const r=await fetch(API+'?action=register',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error('Could not connect');g=await r.json();localStorage.setItem('nothing-guest-v2',JSON.stringify(g))}const response=await fetch(API+'?action=waitlist',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+g.token},body:JSON.stringify({email:document.getElementById('email').value,consent:document.getElementById('consent').checked})});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not save email');status.textContent=data.already?'You are already on the list.':'You are on the list. We will write when there is news worth sharing.';document.getElementById('updatesForm').hidden=true}catch(err){status.textContent=err.message||'Could not save your email.'}finally{btn.disabled=false}};
 
 document.getElementById('leaveForm').onsubmit=async e=>{e.preventDefault();const g=getGuest(),btn=document.getElementById('leaveButton'),status=document.getElementById('leaveStatus');if(!g?.token){status.textContent='This browser has no matching signup identity. Contact After All to request removal.';return}btn.disabled=true;status.textContent='Updating your preferences…';try{const r=await fetch(API+'?action=unsubscribe',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+g.token},body:JSON.stringify({email:document.getElementById('leaveEmail').value})});const d=await r.json();if(!r.ok)throw Error(d.error||'Could not update preferences');status.textContent='If this email was signed up here, it has been unsubscribed.'}catch(err){status.textContent=err.message||'Could not update your preferences'}finally{btn.disabled=false}};
-</script></body></html>
+</script>
+</body>
+</html>

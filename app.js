@@ -95,7 +95,7 @@ async function endGame(reason){
  label('finalScore',state.score);label('best','Personal best: '+best);
  label('resultHeading',state.score>previousBest&&state.score>0?'New personal best.':reason==='bomb'?'A little explosive.':reason==='misses'?'That was close.':"Time's up.");
  label('rankHint',state.offline?'This round was offline, so it cannot be ranked.':'');
- state.pending=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result,bomb:state.bomb}:null;
+ state.pending=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result:reason,bomb:state.bomb}:null;
  if(state.pending)save('nothing-pending-v2',state.pending);else remove('nothing-pending-v2');
  screen('end');
  if(state.name&&state.pending){label('rankHint','Saving your score…');try{const d=await submitScore();label('rankHint','Official rank #'+d.rank+' · Best '+d.best)}catch(e){label('rankHint','Score not saved yet. Open the leaderboard to try again.')}}

@@ -89,4 +89,4 @@ Do not set up DNS based on guesswork. Only the Resend dashboard supplies the act
 
 ## Current blocker
 
-As of the implementation, the assistant can write/deploy the application and database changes, but cannot log into an unconnected Resend account, register a sending domain inside it, create a private API key on your behalf, or inject that key through the currently available Supabase connector. These steps must be completed in the provider dashboards by an authorised owner.
+As of the implementation, the frontend and Edge Function are deployed, and the remaining activation requires your Resend account and domain authentication. The assistant cannot log into an unconnected Resend account, register a sending domain inside it, create a private API key on your behalf, or inject that key through the currently available Supabase connector. These steps must be completed in the provider dashboards by an authorised owner.

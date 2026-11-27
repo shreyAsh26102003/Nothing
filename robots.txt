@@ -1,2 +1,3 @@
+# Allow messaging apps to read link previews. Individual pages retain noindex meta tags.
 User-agent: *
-Disallow: /
+Allow: /

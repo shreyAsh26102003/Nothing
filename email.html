@@ -48,8 +48,8 @@ html,body{height:auto;min-height:100%;overflow:auto}
    const d=await r.json();
    if(!r.ok)throw Error(d.error||'That link is no longer valid.');
    if(action==='confirm_email'){
-     heading.textContent='You\'re on the list.';
-     status.textContent='Email confirmed. We\'ll be in touch when there\'s something worth sharing.';
+     heading.textContent='Email confirmed';
+     status.textContent='Thanks for confirming. We\'ll email you when we have an update.';
    }else{
      heading.textContent='Done.';
      status.textContent='You\'re unsubscribed from After All updates.';

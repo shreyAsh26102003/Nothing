@@ -123,9 +123,9 @@ function renderBoard(){
  $('more').hidden=state.ranking.length<=10;label('more',state.showAll?'SHOW TOP 10':'SEE TOP 100');
  label('yourBest',state.profile?.best||getStored('nothing-local-best-v2')||'—');
  label('yourRank',state.profile?.rank?'#'+state.profile.rank:'—');
- label('boardNote',state.guest?'Scores are tied to this browser. Keep your browser data to keep your place.':'Play a round to join the leaderboard.');
+ label('boardNote',state.guest?'Scores stay tied to this browser. Clear browser data and your identity cannot be recovered.':'Play a round to join the leaderboard.');
 }
-$('claimForm').onsubmit=async e=>{e.preventDefault();track('claim_requested');const b=$('claimButton');b.disabled=true;label('claimStatus','Saving your score…');try{const result=await submitScore();$('claim').hidden=true;label('boardMessage','Saved. You are ranked #'+result.rank+'.');await showBoard()}catch(err){label('claimStatus',err.message||'Could not save the score. Try again.')}finally{b.disabled=false}};
+$('claimForm').onsubmit=async e=>{e.preventDefault();track('claim_requested');const b=$('claimButton');b.disabled=true;label('claimStatus','Saving your score…');try{const result=await submitScore();$('claim').hidden=true;label('boardMessage',result.pendingReview?'Score saved and awaiting review.':'Saved. You are ranked #'+result.rank+'.');await showBoard()}catch(err){label('claimStatus',err.message||'Could not save the score. Try again.')}finally{b.disabled=false}};
 $('more').onclick=()=>{state.showAll=!state.showAll;renderBoard()};
 $('play').onclick=begin;$('again').onclick=begin;$('openBoard').onclick=showBoard;$('boardFromHome').onclick=showBoard;$('boardClose').onclick=()=>screen(state.score||state.reason?'end':'home');
 $('backHome').onclick=()=>screen('home');

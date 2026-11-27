@@ -27,13 +27,13 @@ track('visit');
 async function guest(){if(state.guest?.token)return;const r=await request('register','POST',{},false);state.guest=r;save('nothing-guest-v2',r)}
 function localWaves(){const arr=[];let sec=.8;while(sec<44){const phase=sec<7?0:sec<18?1:sec<30?2:3;const count=phase===0?2:phase===1?2+Math.floor(Math.random()*3):3+Math.floor(Math.random()*3);const chance=[.18,.31,.43,.52][phase],bomb=Math.random()<chance?Math.floor(Math.random()*count):-1;const slots=Array.from({length:count},(_,i)=>i).sort(()=>Math.random()-.5);const entries=slots.map((lane,i)=>({bomb:i===bomb,fruit:Math.floor(Math.random()*5),x:.09+.82*(lane+.5)/count+(Math.random()-.5)*.08,vx:(Math.random()-.5)*.07,apex:.65+Math.random()*.21}));arr.push({sec,entries});sec+=[1.4,1.15,.95,.82][phase]+Math.random()*.25}return arr}
 function elapsed(now=performance.now()){return Math.max(0,(now-state.startAt)/1000)}
-function updateHud(){label('score',state.score);label('time',Math.max(0,Math.ceil(state.seconds-elapsed())));label('misses',state.misses+'/3')}
+function updateHud(){label('score',state.score);label('time',state.seconds);label('misses',state.misses+'/3')}
 async function begin(){
  if(state.starting)return;state.starting=true;
  const btn=$('play');btn.disabled=true;label('play','GETTING FRUIT READY…');
  sound('start');
  let waves=null,roundId=null;
- try{await guest();const r=await request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)});waves=r.waves;roundId=r.roundId}catch(e){console.warn('Playing offline; score cannot be submitted',e)}
+ try{const r=await Promise.race([(async()=>{await guest();return request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)})})(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Network setup took too long')),2600))]);waves=r.waves;roundId=r.roundId}catch(e){console.warn('Playing offline; score cannot be submitted',e)}
  state.starting=false;btn.disabled=false;label('play','PLAY NOTHING.');
  state.waves=waves||localWaves();state.roundId=roundId;state.offline=!roundId;
  state.cursor=0;state.items=[];state.particles=[];state.halves=[];state.popups=[];state.trail=[];state.events=[];state.score=0;state.misses=0;state.combo=0;state.lastHit=-100;state.bomb=null;state.reason='';state.playing=false;state.drag=false;

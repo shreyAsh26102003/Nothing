@@ -46,11 +46,49 @@ async function top(){
  return {top:rows.map((r:any,i:number)=>({rank:i+1,playerId:r.player_id,name:r.display_name,score:r.score})),cutoff:rows.length===100?rows[99].score:null,entries:rows.length};
 }
 
+const emailConfigured=()=>Boolean(Deno.env.get('RESEND_API_KEY')&&Deno.env.get('AFTER_ALL_EMAIL_FROM'));
+const freshToken=()=>Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
+async function sendConfirmationMessage(id:number,email:string,token:string){
+ const apiKey=Deno.env.get('RESEND_API_KEY'),from=Deno.env.get('AFTER_ALL_EMAIL_FROM');
+ if(!apiKey||!from)return {emailSent:false,delivery:'not_configured'};
+ const link='https://becauseafterall.com/email.html#confirm='+token;
+ const leave='https://becauseafterall.com/email.html#unsubscribe='+token;
+ const textBody=['AFTER ALL.','','You found us early.','','We\'re making something with fruit. That\'s all we\'re saying for now.','','Confirm you want to hear from us:',link,'','If you didn\'t sign up, you can ignore this email.','','Unsubscribe: '+leave,'','After All.'].join('\n');
+ const html=['<html><body style="margin:0;padding:0;background:#fff0d4;color:#2b1b28;font-family:Arial,Helvetica,sans-serif">',
+ '<div style="max-width:560px;margin:0 auto;padding:42px 28px">',
+ '<p style="font-size:14px;font-weight:900;letter-spacing:1px">AFTER ALL.</p>',
+ '<h1 style="font-size:34px;line-height:1.08;letter-spacing:-1px;margin:44px 0 24px">You found us early.</h1>',
+ '<p style="font-size:17px;line-height:1.55">We\'re making something with fruit.<br>That\'s all we\'re saying for now.</p>',
+ '<p style="margin:35px 0"><a href="'+link+'" style="display:inline-block;padding:14px 20px;border-radius:28px;background:#ff705c;border:2px solid #2b1b28;color:#2b1b28;text-decoration:none;font-weight:900;font-size:14px">CONFIRM MY EMAIL</a></p>',
+ '<p style="font-size:12px;line-height:1.6;color:#79646b">If you didn\'t sign up, ignore this email.</p>',
+ '<p style="margin-top:48px;font-size:12px"><a style="color:#79646b" href="'+leave+'">Unsubscribe</a></p>',
+ '</div></body></html>'].join('');
+ try{
+  const res=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json','Idempotency-Key':'afterall-confirm-'+id+'-'+token.slice(0,20)},body:JSON.stringify({from,to:[email],subject:'A note from After All.',html,text:textBody,...(Deno.env.get('AFTER_ALL_REPLY_TO')?{reply_to:Deno.env.get('AFTER_ALL_REPLY_TO')}: {})}),signal:AbortSignal.timeout(12000)});
+  if(!res.ok){console.warn('afterall-email-provider-rejected',res.status);return {emailSent:false,delivery:'provider_error'}}
+  const result=await res.json();
+  const {error}=await db.from('nothing_waitlist').update({confirmation_sent_at:new Date().toISOString(),confirmation_message_id:String(result.id||'')}).eq('id',id);
+  if(error)console.warn('afterall-email-ack-save-error',error.code);
+  return {emailSent:true,delivery:'sent'};
+ }catch(e){console.warn('afterall-email-request-failed',String(e).slice(0,140));return {emailSent:false,delivery:'provider_error'}}
+}
+async function attemptConfirmation(row:any){
+ if(!emailConfigured())return {emailSent:false,delivery:'not_configured'};
+ if(row.verified||row.unsubscribed_at||!row.marketing_consent)return {emailSent:false,delivery:'already_handled'};
+ const now=Date.now(),prev=row.confirmation_attempted_at?new Date(row.confirmation_attempted_at).getTime():0;
+ const withinDay=now-prev<86400000,attempts=withinDay?Number(row.confirmation_attempts||0):0;
+ if(withinDay&&now-prev<120000)return {emailSent:false,delivery:'recently_attempted'};
+ if(withinDay&&attempts>=3)return {emailSent:false,delivery:'rate_limited'};
+ const token=freshToken(),digest=await hash(token);
+ const {error}=await db.from('nothing_waitlist').update({confirmation_token_hash:digest,confirmation_expires_at:new Date(now+7*86400000).toISOString(),confirmation_attempted_at:new Date(now).toISOString(),confirmation_attempts:attempts+1,confirmation_sent_at:null,confirmation_message_id:null}).eq('id',row.id);
+ if(error){console.warn('afterall-confirmation-update-failed',error.code);return {emailSent:false,delivery:'storage_error'}};
+ return await sendConfirmationMessage(Number(row.id),String(row.email),token);
+}
 Deno.serve(async (req:Request)=>{
  if(req.method==='OPTIONS')return new Response('',{headers});
  const action=new URL(req.url).searchParams.get('action')||'leaderboard';
  try {
-  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v13'});
+  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v19'});
   if(action==='leaderboard'&&req.method==='GET')return respond(await top());
   if(action==='register'&&req.method==='POST'){
    const ip=req.headers.get('cf-connecting-ip')||req.headers.get('x-real-ip');
@@ -70,24 +108,49 @@ Deno.serve(async (req:Request)=>{
    if(error)throw error;
    return respond({ok:true});
   }
+  if(action==='email_status'&&req.method==='GET')return respond({enabled:emailConfigured()});
+  if((action==='confirm_email'||action==='unsubscribe_email')&&req.method==='POST'){
+   const body=await req.json().catch(()=>({})),token=String(body.token||'');
+   if(!/^[0-9a-f]{64}$/.test(token))return respond({error:'This link is invalid.'},400);
+   const digest=await hash(token),now=new Date().toISOString();
+   if(action==='confirm_email'){
+    const {data,error}=await db.from('nothing_waitlist').update({verified:true,confirmed_at:now}).eq('confirmation_token_hash',digest).gte('confirmation_expires_at',now).eq('marketing_consent',true).is('unsubscribed_at',null).select('id');
+    if(error)throw error;
+    if(!data?.length)return respond({error:'This link has expired or has already been used. Return to the signup page to request a new note.'},410);
+    return respond({confirmed:true});
+   }
+   const {data,error}=await db.from('nothing_waitlist').update({marketing_consent:false,unsubscribed_at:now}).eq('confirmation_token_hash',digest).is('unsubscribed_at',null).select('id');
+   if(error)throw error;
+   return respond({unsubscribed:true});
+  }
   const player=await readPlayer(req);
   if(!player)return respond({error:'Session missing. Open the game again.'},401);
 if(action==='waitlist'&&req.method==='POST'){
-   const b=await req.json(),email=String(b.email||'').trim().toLowerCase();
-   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email address.'},400);
-   if(b.consent!==true)return respond({error:'Please confirm that you want emails from After All.'},400);
-   const {count}=await db.from('nothing_waitlist').select('*',{count:'exact',head:true}).eq('player_id',player.id).gte('created_at',new Date(Date.now()-86400000).toISOString());
-   if((count||0)>=3)return respond({error:'Too many attempts. Try another day.'},429);
-   const {data:existing}=await db.from('nothing_waitlist').select('id,player_id,unsubscribed_at').eq('email_normalized',email).maybeSingle();
-   if(existing){
-    if(existing.player_id===player.id&&existing.unsubscribed_at){const {error:resetError}=await db.from('nothing_waitlist').update({unsubscribed_at:null,marketing_consent:true}).eq('id',existing.id);if(resetError)throw resetError;return respond({accepted:true,resubscribed:true,verified:false})}
-    return respond({accepted:true,already:true,verified:false});
-   }
-   const {error}=await db.from('nothing_waitlist').insert({player_id:player.id,email,marketing_consent:true,source:'nothing'});
-   if(error)throw error;
-   return respond({accepted:true,verified:false});
+ const b=await req.json(),email=String(b.email||'').trim().toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email address.'},400);
+ if(b.consent!==true)return respond({error:'Please confirm that you want emails from After All.'},400);
+ const {count}=await db.from('nothing_waitlist').select('*',{count:'exact',head:true}).eq('player_id',player.id).gte('created_at',new Date(Date.now()-86400000).toISOString());
+ if((count||0)>=3)return respond({error:'Too many attempts. Try another day.'},429);
+ const {data:existing,error:findError}=await db.from('nothing_waitlist').select('id,player_id,email,marketing_consent,verified,unsubscribed_at,confirmation_attempted_at,confirmation_attempts').eq('email_normalized',email).maybeSingle();
+ if(findError)throw findError;
+ if(existing){
+  if(existing.player_id!==player.id)return respond({accepted:true,emailSent:false,delivery:'existing',verified:false});
+  if(existing.unsubscribed_at){
+   const {error:resetError}=await db.from('nothing_waitlist').update({unsubscribed_at:null,marketing_consent:true,verified:false,confirmed_at:null,confirmation_attempts:0,confirmation_attempted_at:null}).eq('id',existing.id);
+   if(resetError)throw resetError;
+   existing.unsubscribed_at=null;existing.verified=false;existing.marketing_consent=true;existing.confirmation_attempts=0;existing.confirmation_attempted_at=null;
   }
-    if(action==='unsubscribe'&&req.method==='POST'){
+  if(existing.verified)return respond({accepted:true,emailSent:false,delivery:'verified',verified:true});
+  return respond({accepted:true,verified:false,...await attemptConfirmation(existing)});
+ }
+ const {data:added,error}=await db.from('nothing_waitlist').insert({player_id:player.id,email,marketing_consent:true,source:'nothing'}).select('id,player_id,email,marketing_consent,verified,unsubscribed_at,confirmation_attempted_at,confirmation_attempts').single();
+ if(error){
+  if(error.code==='23505')return respond({accepted:true,emailSent:false,delivery:'existing',verified:false});
+  throw error;
+ }
+ return respond({accepted:true,verified:false,...await attemptConfirmation(added)});
+}
+  if(action==='unsubscribe'&&req.method==='POST'){
    const b=await req.json(),email=String(b.email||'').trim().toLowerCase();
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254)return respond({error:'Enter a valid email.'},400);
    const {error}=await db.from('nothing_waitlist').update({unsubscribed_at:new Date().toISOString(),marketing_consent:false}).eq('player_id',player.id).eq('email_normalized',email).is('unsubscribed_at',null);

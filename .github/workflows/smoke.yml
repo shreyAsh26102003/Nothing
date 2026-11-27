@@ -15,3 +15,10 @@ jobs:
 
       - name: Run mobile browser smoke test
         run: node test/browser.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nothing-browser-failure
+          path: test-failure.png
+          if-no-files-found: ignore

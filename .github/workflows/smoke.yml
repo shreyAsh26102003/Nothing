@@ -3,30 +3,33 @@ on:
   push:
     branches: [main]
   pull_request:
+concurrency:
+  group: game-smoke-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm test
-
       - name: Install Chrome for browser tests
         id: chrome
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-
       - name: Run mobile browser smoke test
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: npm run test:browser
-
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: nothing-browser-failure
+          name: browser-test-failure
           path: test-failure.png
           if-no-files-found: ignore

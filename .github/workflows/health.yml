@@ -1,10 +1,13 @@
-name: Nothing. production health
+name: After All production health
+# Check the live deployment independently of commits.
+# Vercel is currently deployed manually, so main-branch pushes can precede deployment.
 on:
-  push:
-    branches: [main]
   schedule:
-    - cron: '17 5 * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
+concurrency:
+  group: live-health
+  cancel-in-progress: true
 jobs:
   probe:
     runs-on: ubuntu-latest

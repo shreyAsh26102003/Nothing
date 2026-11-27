@@ -40,10 +40,12 @@ async function logFlag(playerId:string,roundId:string,reason:string){
  try{await db.from('nothing_score_flags').insert({player_id:playerId,round_id:roundId,reason,severity:2})}catch{}
 }
 async function top(){
- const {data,error}=await db.from('nothing_guest_scores').select('player_id,display_name,score,achieved_at,nothing_guest_players!inner(disabled)').eq('nothing_guest_players.disabled',false).order('score',{ascending:false}).order('achieved_at',{ascending:true}).limit(100);
+ const {data,error}=await db.rpc('nothing_top_scores',{p_limit:100});
  if(error)throw error;
- return {top:(data||[]).map((r:any,i:number)=>({rank:i+1,playerId:r.player_id,name:r.display_name,score:r.score})),cutoff:data?.length===100?data[99].score:null,entries:data?.length||0};
+ const rows=data||[];
+ return {top:rows.map((r:any,i:number)=>({rank:i+1,playerId:r.player_id,name:r.display_name,score:r.score})),cutoff:rows.length===100?rows[99].score:null,entries:rows.length};
 }
+
 Deno.serve(async (req:Request)=>{
  if(req.method==='OPTIONS')return new Response('',{headers});
  const action=new URL(req.url).searchParams.get('action')||'leaderboard';

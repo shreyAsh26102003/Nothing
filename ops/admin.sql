@@ -69,7 +69,7 @@ order by r.created_at desc limit 200;
 -- Do not initiate outbound messaging without provider, verified consent,
 -- unsubscribe, suppression and legal review.
 select email,created_at from public.nothing_waitlist
-where marketing_consent=true and unsubscribed_at is null
+where marketing_consent=true and verified=true and unsubscribed_at is null
 order by created_at desc;
 
 -- 10. Check that every table in exposed schemas has RLS.

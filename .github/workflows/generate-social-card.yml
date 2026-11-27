@@ -1,0 +1,34 @@
+name: Generate social preview PNG
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'social-card.svg'
+      - 'scripts/generate-social-card.py'
+      - '.github/workflows/generate-social-card.yml'
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install cairosvg pillow
+      - run: python scripts/generate-social-card.py
+      - name: Commit generated PNG if updated
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add social-card-v2.png
+          if ! git diff --cached --quiet; then
+            git commit -m 'Generate WhatsApp-compatible social preview PNG'
+            git push origin HEAD:main
+          else
+            echo 'Social preview PNG is already current.'
+          fi

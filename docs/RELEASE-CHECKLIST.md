@@ -14,7 +14,7 @@ Each item has three different states: **implemented**, **demonstrated**, and **a
 - [x] Source-level tests and Chromium mobile smoke workflow committed.
 - [x] At least one GitHub **Game smoke tests** workflow passed (27 November 2026, commit `fc06ae5`).
 - [x] Vercel deployment previously reached READY.
-- [ ] Latest code deployed and confirmed against the deployed `app.js` and Supabase API version.
+- [x] Latest frontend assets deployed in Vercel production deployment `dpl_5Ro4xSJryPLpTUQfykEu2W3R9iQW` (READY); automated production asset and API checks green.
 - [ ] Live Chromium test against deployed service in addition to local smoke simulation.
 - [ ] Complete **real** iPhone Safari journey (play → claim → rank → relaunch → same rank).
 - [ ] Complete **real** Android Chrome journey.
@@ -65,11 +65,11 @@ Each item has three different states: **implemented**, **demonstrated**, and **a
 - [x] Site health-check script and scheduled workflow exist.
 - [x] Administrator runbook, architecture handover and checklist.
 - [ ] GitHub-to-Vercel automatic deployment: Vercel Git provider currently returned an authorisation error; owner must reconnect/access repo or choose direct deployments.
-- [ ] Confirm current GitHub Actions workflow passes after latest source changes.
-- [ ] Confirm daily health-check job receives GitHub failure notifications (or choose another destination).
+- [x] Current GitHub Actions workflow passes after latest source changes (27 November 2026).
+- [ ] Confirm GitHub email/notification preferences actually deliver failures to an assigned operator; scheduled workflow itself exists and has passed.
 - [ ] External backups / formal retention and restoration tested if production usage warrants them.
 - [ ] Assign individuals responsible for game, infra, support, privacy and abuse review.
-- [ ] Record final deployment ID and rollback point.
+- [x] Record current deployment ID: `dpl_5Ro4xSJryPLpTUQfykEu2W3R9iQW` (Vercel READY); preserve prior deployment history for rollback.
 - [ ] Founder-approved custom domain connection, **last**.
 
 ## Private beta protocol
@@ -85,3 +85,7 @@ Recruit 20–30 people from the intended audience, not exclusively friends who w
 ## Operational principle
 
 Avoid declaring a feature complete solely because a function, screen or database table exists. Product acceptance requires live behavior, and user enjoyment requires human evidence. The domain remains explicitly out of scope until approval.
+
+## Latest engineering verification (27 November 2026)
+
+Production site health and GitHub smoke suites passed, including the separate headless Chromium flow. A disposable real-backend integration test passed register → start → three misses → submit zero-score round → profile → leaderboard → delete guest. The test uses a synthetic guest and does **not** establish winner identity or real-device performance. The custom domain remains unconnected.

@@ -49,7 +49,7 @@ try{
  console.log('PASS: register -> start -> 3 missed fruits -> submit -> profile -> leaderboard');
 }finally{
  if(token){
-  try{const result=await call('delete_profile',{method:'POST',body:{confirm:'DELETE'}});deleted=result.deleted===true;console.log(deleted?'PASS: disposable test guest deleted':'WARNING: cleanup returned unexpected status')}
+  try{const result=await call('delete_profile',{method:'POST',body:{confirm:'DELETE'}});deleted=result.deleted===true;assert.equal(deleted,true,'disposable user must be deleted');console.log('PASS: disposable test guest deleted')}
   catch(e){console.error('CRITICAL: disposable test guest cleanup failed:',e.message);process.exitCode=1}
  }
 }

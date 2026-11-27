@@ -27,6 +27,20 @@ Playable fruit-slicing game, hosted separately from becauseafterall.com.
 5. Vercel deploys are currently pushed through the API; the Vercel Git integration still needs access to the public GitHub repository for automatic deploy-on-push. Avoid assuming GitHub commits update the live site.
 6. Custom `becauseafterall.com` domain has **not** been connected. Repository is public.
 
+## Handover documentation
+
+- **[Complete handover](docs/HANDOVER.md)** — architecture, live links, deployment, operations, data and known blockers.
+- **[Release checklist](docs/RELEASE-CHECKLIST.md)** — requirements for quiet preview, distribution and prize competition.
+- **[Admin and moderation](docs/ADMIN-RUNBOOK.md)** — secure score review and fraud-response actions.
+- **[Gameplay tuning](docs/GAMEPLAY_BALANCING.md)** and **[beta test kit](docs/BETA_TEST.md)**.
+- **[Launch messaging](docs/LAUNCH_COPY.md)** and **[competition rules draft](docs/COMPETITION_RULES_DRAFT.md)**.
+- **[Incident response](docs/INCIDENT_RESPONSE.md)**; SQL reports in `ops/reports.sql`, safe admin queries in `ops/admin.sql`, maintenance review in `ops/maintenance.sql`.
+- **Live integration test:** `npm run test:live` registers a disposable test player, finishes a round, saves and reads the score, then deletes the test player. Requires network and modifies/deletes temporary test data. GitHub has a manually invokable workflow for this.
+
+## Verified live integration
+
+On 27 November 2026, the live round-to-leaderboard test passed in GitHub Actions after fixing a real guest-registration 500 error. The test confirmed register, start, 3 missed fruits, score submit, profile, public leaderboard and disposable-player cleanup.
+
 ## Maintaining the game
 Do not expose service credentials in browser code, version control, or screenshots. Use Supabase SQL Editor for administrative reports, including suspicious scores. Review prize records only in the private schema. Preserve three misses unless the product owner changes the rule.
 

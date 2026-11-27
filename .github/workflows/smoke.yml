@@ -12,3 +12,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
+
+      - name: Run mobile browser smoke test
+        run: node test/browser.mjs

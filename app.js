@@ -30,11 +30,11 @@ function elapsed(now=performance.now()){return Math.max(0,(now-state.startAt)/10
 function updateHud(){label('score',state.score);label('time',state.seconds);label('misses',state.misses+'/3')}
 async function begin(){
  if(state.starting||state.playing)return;resize();state.starting=true;
- const btn=$('play');btn.disabled=true;label('play','GETTING FRUIT READY…');
+ const btn=$('play');btn.disabled=true;label('play','STARTING…');
  sound('start');
  let waves=null,roundId=null;
  try{const r=await Promise.race([(async()=>{await guest();try{return await request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)})}catch(err){if(/session missing/i.test(err.message)){state.guest=null;remove('nothing-guest-v2');await guest();return request('start','POST',{width:Math.round(state.width),height:Math.round(state.height)})}throw err}})(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Network setup took too long')),4400))]);waves=r.waves;roundId=r.roundId}catch(e){console.warn('Playing offline; score cannot be submitted',e)}
- state.starting=false;btn.disabled=false;label('play','PLAY NOTHING.');
+ state.starting=false;btn.disabled=false;label('play','PLAY');
  state.waves=waves||localWaves();state.roundId=roundId;state.offline=!roundId;
  state.cursor=0;state.items=[];state.particles=[];state.halves=[];state.popups=[];state.trail=[];state.events=[];state.score=0;state.misses=0;state.combo=0;state.lastHit=-100;state.bomb=null;state.reason='';state.playing=false;state.drag=false;
  screen(null);$('hud').classList.add('visible');updateHud();
@@ -93,7 +93,7 @@ async function endGame(reason){
  if(!state.playing)return;const endAt=Math.min(45,elapsed());state.playing=false;cancelAnimationFrame(state.raf);state.reason=reason;track('ended');if(reason!=='bomb')sound(reason==='time'?'start':'miss');
  const previousBest=Number(getStored('nothing-local-best-v2')||0),best=Math.max(state.score,previousBest);save('nothing-local-best-v2',best);
  label('finalScore',state.score);label('best','Personal best: '+best);
- label('resultHeading',state.score>previousBest&&state.score>0?'New personal best.':reason==='bomb'?'A little explosive.':reason==='misses'?'That was close.':"Time's up.");
+ label('resultHeading',state.score>previousBest&&state.score>0?'You beat your personal best.':reason==='bomb'?'You hit a bomb.':reason==='misses'?'You missed three fruits.':"Time's up.");
  label('rankHint',state.offline?'This round was offline, so it cannot be ranked.':'');
  const thisRound=state.roundId?{roundId:state.roundId,score:state.score,events:state.events,endAt:Number(endAt.toFixed(3)),result:reason,bomb:state.bomb}:null;
  if(thisRound&&(!state.pending||thisRound.score>=state.pending.score))state.pending=thisRound;
@@ -131,9 +131,9 @@ $('claimForm').onsubmit=async e=>{e.preventDefault();track('claim_requested');co
 $('more').onclick=()=>{state.showAll=!state.showAll;renderBoard()};
 $('play').onclick=begin;$('again').onclick=begin;$('openBoard').onclick=showBoard;$('boardFromHome').onclick=showBoard;$('boardClose').onclick=()=>screen(state.score||state.reason?'end':'home');
 $('backHome').onclick=()=>screen('home');
-const challenge=Number(new URLSearchParams(location.search).get('challenge'));if(Number.isFinite(challenge)&&challenge>0&&challenge<10000)label('intro','Someone scored '+challenge+'. Think you can beat it?');
+const challenge=Number(new URLSearchParams(location.search).get('challenge'));if(Number.isFinite(challenge)&&challenge>0&&challenge<10000)label('intro','Someone scored '+challenge+'. See if you can beat their score.');
 function scoreLink(){const q=new URLSearchParams({challenge:String(state.score)});if(state.guest?.playerId)q.set('ref',state.guest.playerId);return location.origin+location.pathname+'?'+q.toString()}
-$('share').onclick=async()=>{track('shared');const text='I scored '+state.score+' playing Nothing. Think you can beat that?';const url=scoreLink();if(navigator.share){try{await navigator.share({title:'Nothing. — After All',text,url});return}catch(err){if(err.name==='AbortError')return}}try{await navigator.clipboard.writeText(text+' '+url);label('share','LINK COPIED');setTimeout(()=>label('share','CHALLENGE A FRIEND'),1700)}catch{prompt('Copy your challenge',text+' '+url)}};
-$('saveCard').onclick=()=>{const c=document.createElement('canvas');c.width=1080;c.height=1350;const p=c.getContext('2d');p.fillStyle='#fff0d4';p.fillRect(0,0,1080,1350);p.fillStyle='#f4d15e';p.beginPath();p.arc(1010,145,250,0,Math.PI*2);p.fill();p.fillStyle='#ffb6a5';p.beginPath();p.arc(90,1140,270,0,Math.PI*2);p.fill();p.fillStyle='#2b1b28';p.textAlign='center';p.font='900 40px Arial';p.fillText('AFTER ALL PRESENTS',540,170);p.font='900 160px Arial';p.fillText('Nothing.',540,390);p.font='900 40px Arial';p.fillText('I SCORED',540,560);p.font='900 270px Arial';p.fillText(String(state.score),540,845);p.font='900 51px Arial';p.fillText('Think you can beat that?',540,960);p.font='bold 35px Arial';p.fillText('becauseafterall.com',540,1170);try{const a=document.createElement('a');a.download='nothing-score-'+state.score+'.png';a.href=c.toDataURL('image/png');document.body.append(a);a.click();a.remove()}catch(err){report(err)}};
+$('share').onclick=async()=>{track('shared');const text='I scored '+state.score+' on the fruit game from After All. Can you beat it?';const url=scoreLink();if(navigator.share){try{await navigator.share({title:'A game from After All',text,url});return}catch(err){if(err.name==='AbortError')return}}try{await navigator.clipboard.writeText(text+' '+url);label('share','LINK COPIED');setTimeout(()=>label('share','SHARE YOUR SCORE'),1700)}catch{prompt('Copy your challenge',text+' '+url)}};
+$('saveCard').onclick=()=>{const c=document.createElement('canvas');c.width=1080;c.height=1350;const p=c.getContext('2d');p.fillStyle='#fff0d4';p.fillRect(0,0,1080,1350);p.fillStyle='#f4d15e';p.beginPath();p.arc(1010,145,250,0,Math.PI*2);p.fill();p.fillStyle='#ffb6a5';p.beginPath();p.arc(90,1140,270,0,Math.PI*2);p.fill();p.fillStyle='#2b1b28';p.textAlign='center';p.font='900 40px Arial';p.fillText('AFTER ALL PRESENTS',540,170);p.font='900 64px Arial';p.fillText('MY SCORE',540,430);p.font='900 270px Arial';p.fillText(String(state.score),540,845);p.font='900 51px Arial';p.fillText('Can you beat it?',540,960);p.font='bold 35px Arial';p.fillText('becauseafterall.com',540,1170);try{const a=document.createElement('a');a.download='after-all-score-'+state.score+'.png';a.href=c.toDataURL('image/png');document.body.append(a);a.click();a.remove()}catch(err){report(err)}};
 screen('home');
 })();

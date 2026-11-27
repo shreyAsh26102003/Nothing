@@ -68,3 +68,13 @@ test('data requests, optional updates and guest deletion are wired',()=>{
  assert.match(api,/action==='export_profile'/);
  assert.match(api,/action==='unsubscribe'/);
 });
+
+test('After All teaser is poetic, accessible, and separate from game sign-up',()=>{
+ const teaser=readFileSync(new URL('updates.html',here),'utf8');
+ for(const line of ['Before anyone made a treat','Fruit has been doing just fine','What if the original indulgence','had a second act?','KEEP ME POSTED'])assert.ok(teaser.includes(line));
+ assert.match(teaser,/id="updatesForm"/);
+ assert.match(teaser,/id="consent" type="checkbox"/);
+ assert.match(teaser,/id="leaveForm"/);
+ assert.match(teaser,/https:\/\/becauseafterall\.com\/social-card\.svg/);
+ assert.match(html,/https:\/\/becauseafterall\.com\/social-card\.svg/);
+});

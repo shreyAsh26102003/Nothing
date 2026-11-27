@@ -1,28 +1,133 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
-const url=Deno.env.get('SUPABASE_URL')!, key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const admin=createClient(url,key,{auth:{persistSession:false}});
-const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Content-Type':'application/json'};
-function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:cors})}
-function rand(seed:number){let t=seed>>>0;return ()=>{t+=0x6D2B79F5;let x=t;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return ((x^x>>>14)>>>0)/4294967296}}
-function layout(seed:number){const rnd=rand(seed);const waves=[];for(let i=0;i<52;i++){const sec=i*.88+.65,count=sec<10?1:sec<22?2:sec<34?2:3;let bomb=sec>8&&count>1&&rnd()<(sec<22?.17:sec<34?.28:.4)?Math.floor(rnd()*count):-1;const entries=[];for(let n=0;n<count;n++)entries.push({bomb:n===bomb,lane:n,count,fruit:Math.floor(rnd()*5),offset:(rnd()-.5)*.08});waves.push({sec,entries})}return waves}
-Deno.serve(async req=>{if(req.method==='OPTIONS')return new Response('',{headers:cors});try{
-const action=new URL(req.url).searchParams.get('action')||'leaderboard';
-if(action==='leaderboard'&&req.method==='GET'){const {data,error}=await admin.from('nothing_scores').select('user_id,display_name,score,updated_at').order('score',{ascending:false}).order('updated_at',{ascending:true}).limit(100);if(error)throw error;return json({top:data.map((x,i)=>({rank:i+1,userId:x.user_id,name:x.display_name,score:x.score})),cutoff:data.length===100?data[99].score:null,entries:data.length})}
-if(action==='start'&&req.method==='POST'){const seed=Math.floor(Math.random()*4294967295);const {data,error}=await admin.from('nothing_sessions').insert({seed:String(seed)}).select('id,started_at').single();if(error)throw error;return json({sessionId:data.id,startedAt:data.started_at,seed,waves:layout(seed)})}
-if(action==='track'&&req.method==='POST'){const body=await req.json();const name=String(body.event||''),anonymous=String(body.anonymousId||''),session=typeof body.sessionId==='string'?body.sessionId:null;if(!['visit','started','ended','replayed','shared','claim_requested','claim_verified'].includes(name)||!/^[a-z0-9-]{16,64}$/i.test(anonymous))return json({error:'Invalid event'},400);const {count}=await admin.from('nothing_events').select('*',{count:'exact',head:true}).eq('anonymous_id',anonymous).gte('created_at',new Date(Date.now()-86400000).toISOString());if((count??0)>200)return json({accepted:false},429);const {error}=await admin.from('nothing_events').insert({event_name:name,anonymous_id:anonymous,session_id:/^[0-9a-f-]{36}$/i.test(session||'')?session:null});if(error)throw error;return json({accepted:true})}
-const token=req.headers.get('authorization')?.replace(/^Bearer /i,'');if(!token)return json({error:'Sign in to submit an official score'},401);
-const {data:auth,error:authError}=await admin.auth.getUser(token);if(authError||!auth.user||!auth.user.email_confirmed_at)return json({error:'Please verify your email first'},401);const user=auth.user;
 
-if(action==='submit'&&req.method==='POST'){const body=await req.json();const name=String(body.name||'').trim().slice(0,24),score=Number(body.score),events=body.events,sessionId=String(body.sessionId||'');if(!/^[A-Za-z0-9 _.-]{2,24}$/.test(name))return json({error:'Choose a name between 2 and 24 characters'},400);
-if(!Number.isInteger(score)||score<0||score>10000||!Array.isArray(events)||events.length>250||!events.every(e=>Number.isInteger(e.wave)&&e.wave>=0&&e.wave<52&&Number.isInteger(e.fruit)&&e.fruit>=0&&e.fruit<3&&Number.isFinite(e.at)&&e.at>=0&&e.at<=47))return json({error:'Invalid score data'},400);
-const {data:session,error}=await admin.from('nothing_sessions').select('*').eq('id',sessionId).is('user_id',null).single();if(error||!session||session.used_at||new Date(session.expires_at).getTime()<Date.now())return json({error:'This game session is invalid or expired'},400);
-const age=(Date.now()-new Date(session.started_at).getTime())/1000;if(age<4||age>180)return json({error:'Game session duration invalid'},400);
-const waves=layout(Number(session.seed));const seen=new Set();let calc=0,combo=0,lastAt=-100;for(const e of events){const wave=waves[e.wave],item=wave.entries[e.fruit],k=e.wave+':'+e.fruit;if(!item||item.bomb||seen.has(k)||e.at<wave.sec-.25||e.at>wave.sec+2.75||e.at>age+1||e.at<lastAt) return json({error:'Score could not be verified'},400);seen.add(k);combo=e.at-lastAt<.18?combo+1:1;calc+=10+(combo>=2?5:0);lastAt=e.at}
-if(calc!==score)return json({error:'Score mismatch'},400);
-const {data:claimed,error:claimErr}=await admin.from('nothing_sessions').update({used_at:new Date().toISOString(),user_id:user.id,score,events}).eq('id',sessionId).is('used_at',null).select('id');if(claimErr||!claimed?.length)return json({error:'This session was already submitted'},409);
-await admin.from('nothing_players').upsert({user_id:user.id,display_name:name,marketing_opt_in:body.marketing===true});
-const {data:existing}=await admin.from('nothing_scores').select('score').eq('user_id',user.id).maybeSingle();
-if(!existing||score>existing.score){const {error:writeErr}=await admin.from('nothing_scores').upsert({user_id:user.id,display_name:name,score,updated_at:new Date().toISOString()});if(writeErr)throw writeErr}
-const {count}=await admin.from('nothing_scores').select('*',{count:'exact',head:true}).gt('score',Math.max(score,existing?.score||0));
-return json({accepted:true,score,best:Math.max(score,existing?.score||0),rank:(count??0)+1})}
-return json({error:'Not found'},404)}catch(e){return json({error:'Server unavailable'},500)}});
+const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}});
+const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'};
+const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers});
+function rng(seed:number){let a=seed>>>0;return ()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function wavesFor(seed:number){
+ const random=rng(seed),waves=[];
+ let sec=.85;
+ for(let w=0;sec<44.3&&w<80;w++){
+  const phase=sec<7?0:sec<18?1:sec<30?2:3;
+  const count=phase===0?2+(random()<.27?1:0):phase===1?2+Math.floor(random()*3):phase===2?3+Math.floor(random()*3):3+Math.floor(random()*3);
+  const risk=phase===0?.18:phase===1?.31:phase===2?.43:.52;
+  const bombIndex=random()<risk?Math.floor(random()*count):-1;
+  const shuffled=Array.from({length:count},(_,i)=>i).sort(()=>random()-.5);
+  const entries=Array.from({length:count},(_,i)=>{
+   const lane=shuffled[i],jitter=(random()-.5)*.08,fruit=Math.floor(random()*5);
+   return {bomb:i===bombIndex,fruit,x:.09+.82*(lane+.5)/count+jitter,vx:(random()-.5)*.07,apex:.65+random()*.21};
+  });
+  waves.push({sec:Math.round(sec*100)/100,entries});
+  const base=phase===0?1.22:phase===1?1.02:phase===2?.82:.7;
+  sec+=base+random()*.4;
+ }
+ return waves;
+}
+async function hash(text:string){const bytes=new TextEncoder().encode(text);return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function readPlayer(req:Request){
+ const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
+ if(!/^[a-zA-Z0-9_-]{35,100}$/.test(token))return null;
+ const digest=await hash(token);
+ const {data,error}=await db.from('nothing_guest_players').select('id,display_name,disabled,created_at').eq('secret_hash',digest).maybeSingle();
+ return error||!data||data.disabled?null:data;
+}
+function validName(name:string){return /^[a-zA-Z0-9][a-zA-Z0-9 ._-]{1,23}$/.test(name)&&!/\b(fuck|cunt|nigger|bitch|asshole|nazi)\b/i.test(name)}
+function finishTime(entry:{apex:number},height:number){
+ const g=height*2.1,vy=-Math.sqrt(2*g*(entry.apex*height+45));
+ return (-vy+Math.sqrt(vy*vy+2*g*20))/g;
+}
+async function logFlag(playerId:string,roundId:string,reason:string){
+ try{await db.from('nothing_score_flags').insert({player_id:playerId,round_id:roundId,reason,severity:2})}catch{}
+}
+async function top(){
+ const {data,error}=await db.from('nothing_guest_scores').select('player_id,display_name,score,achieved_at,nothing_guest_players!inner(disabled)').eq('nothing_guest_players.disabled',false).order('score',{ascending:false}).order('achieved_at',{ascending:true}).limit(100);
+ if(error)throw error;
+ return {top:(data||[]).map((r:any,i:number)=>({rank:i+1,playerId:r.player_id,name:r.display_name,score:r.score})),cutoff:data?.length===100?data[99].score:null,entries:data?.length||0};
+}
+Deno.serve(async (req:Request)=>{
+ if(req.method==='OPTIONS')return new Response('',{headers});
+ const action=new URL(req.url).searchParams.get('action')||'leaderboard';
+ try {
+  if(action==='health'&&req.method==='GET')return respond({ok:true,version:'v4'});
+  if(action==='leaderboard'&&req.method==='GET')return respond(await top());
+  if(action==='register'&&req.method==='POST'){
+   const token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(v=>v.toString(16).padStart(2,'0')).join('');
+   const digest=await hash(token);
+   const {data,error}=await db.from('nothing_guest_players').insert({secret_hash:digest}).select('id').single();
+   if(error)throw error;
+   return respond({playerId:data.id,token});
+  }
+  if(action==='track'&&req.method==='POST'){
+   const body=await req.json(),event=String(body.event||''),anon=String(body.anonymousId||'');
+   if(!['visit','started','ended','replayed','shared','claim_requested','claim_verified','error'].includes(event)||!/^[a-zA-Z0-9-]{16,64}$/.test(anon))return respond({error:'Invalid event'},400);
+   const {count}=await db.from('nothing_events').select('*',{count:'exact',head:true}).eq('anonymous_id',anon).gte('created_at',new Date(Date.now()-86400000).toISOString());
+   if((count||0)>250)return respond({error:'Rate limit'},429);
+   const {error}=await db.from('nothing_events').insert({event_name:event,anonymous_id:anon,session_id:null});
+   if(error)throw error;
+   return respond({ok:true});
+  }
+  const player=await readPlayer(req);
+  if(!player)return respond({error:'Session missing. Open the game again.'},401);
+  if(action==='profile'&&req.method==='GET'){
+   const {data}=await db.from('nothing_guest_scores').select('score,display_name').eq('player_id',player.id).maybeSingle();
+   if(!data)return respond({playerId:player.id,best:0,name:player.display_name,rank:null});
+   const {count}=await db.from('nothing_guest_scores').select('*',{count:'exact',head:true}).gt('score',data.score);
+   return respond({playerId:player.id,best:data.score,name:data.display_name,rank:(count||0)+1});
+  }
+  if(action==='start'&&req.method==='POST'){
+   const body=await req.json(),width=Number(body.width),height=Number(body.height);
+   if(!Number.isInteger(width)||width<280||width>2560||!Number.isInteger(height)||height<400||height>2560)return respond({error:'Unsupported screen size'},400);
+   const {count}=await db.from('nothing_rounds').select('*',{count:'exact',head:true}).eq('player_id',player.id).gte('started_at',new Date(Date.now()-86400000).toISOString());
+   if((count||0)>=100)return respond({error:'Daily round limit reached'},429);
+   const seed=crypto.getRandomValues(new Uint32Array(1))[0];
+   const {data,error}=await db.from('nothing_rounds').insert({player_id:player.id,seed,viewport_width:width,viewport_height:height}).select('id,started_at').single();
+   if(error)throw error;
+   return respond({roundId:data.id,startedAt:data.started_at,waves:wavesFor(seed)});
+  }
+  if(action==='submit'&&req.method==='POST'){
+   const b=await req.json(),name=String(b.name||'').trim(),roundId=String(b.roundId||''),score=Number(b.score),endAt=Number(b.endAt),events=b.events;
+   if(!validName(name))return respond({error:'Enter a name with 2–24 letters or numbers.'},400);
+   if(!Number.isInteger(score)||score<0||score>10000||!Number.isFinite(endAt)||endAt<.8||endAt>45.3||!Array.isArray(events)||events.length>250)return respond({error:'Invalid round data'},400);
+   const {data:round,error:roundErr}=await db.from('nothing_rounds').select('*').eq('id',roundId).eq('player_id',player.id).maybeSingle();
+   if(roundErr||!round||round.claimed_at||new Date(round.expires_at).getTime()<Date.now())return respond({error:'Round expired or already claimed.'},409);
+   const serverAge=(Date.now()-new Date(round.started_at).getTime())/1000;
+   if(serverAge+1<endAt||serverAge>86430)return respond({error:'Round duration could not be verified.'},400);
+   const waves=wavesFor(Number(round.seed)),hit=new Set<string>();
+   let calculated=0,combo=0,lastAt=-100;
+   for(const e of events){
+    if(!Number.isInteger(e.wave)||!Number.isInteger(e.fruit)||!Number.isFinite(e.at)||!Number.isFinite(e.x)||!Number.isFinite(e.y))return respond({error:'Invalid slice event'},400);
+    const wave=waves[e.wave],obj=wave?.entries[e.fruit],at=Number(e.at),key=e.wave+':'+e.fruit,dt=at-(wave?.sec||0);
+    if(!obj||obj.bomb||hit.has(key)||at<lastAt||at>endAt+.2||dt<0||dt>2.6){await logFlag(player.id,roundId,'event sequence impossible');return respond({error:'Score could not be verified'},400)}
+    const H=round.viewport_height,W=round.viewport_width,g=H*2.1,vy=-Math.sqrt(2*g*(obj.apex*H+45));
+    const expectedY=H+45+vy*dt+.5*g*dt*dt,expectedX=obj.x*W+obj.vx*W*dt;
+    const distance=Math.hypot(expectedX-e.x,expectedY-e.y);
+    if(distance>95){await logFlag(player.id,roundId,'position mismatch '+Math.round(distance));return respond({error:'Slice position could not be verified'},400)}
+    hit.add(key);combo=at-lastAt<.18?combo+1:1;calculated+=10+(combo>=2?5:0);lastAt=at;
+   }
+   if(calculated!==score){await logFlag(player.id,roundId,'score mismatch');return respond({error:'Score mismatch'},400)}
+   const result=String(b.result||'');
+   let misses=0,firstThirdMiss=Infinity,landingTimes=[];
+   for(let w=0;w<waves.length;w++){for(let j=0;j<waves[w].entries.length;j++){const item=waves[w].entries[j];if(item.bomb||hit.has(w+':'+j))continue;const landed=waves[w].sec+finishTime(item,round.viewport_height);if(landed<=endAt+.15)landingTimes.push(landed)}}
+   landingTimes.sort((a,b)=>a-b);misses=landingTimes.length;firstThirdMiss=landingTimes[2]??Infinity;
+   if(result==='time'&&endAt<44.7)return respond({error:'Round ended too early'},400);
+   if(result==='misses'&&(misses<3||firstThirdMiss>endAt+.3||firstThirdMiss<endAt-.45))return respond({error:'Miss count could not be verified'},400);
+   if(result==='bomb'){const bomb=b.bomb;const wave=waves[bomb?.wave],obj=wave?.entries[bomb?.fruit],dt=Number(bomb?.at)-Number(wave?.sec);if(!obj?.bomb||!Number.isFinite(dt)||dt<0||dt>2.6||Math.abs(Number(bomb.at)-endAt)>.3)return respond({error:'Bomb hit could not be verified'},400)}
+   if(!['time','misses','bomb'].includes(result))return respond({error:'Round ending is invalid'},400);
+   if(misses>=3&&result==='time')return respond({error:'Miss limit was reached'},400);
+   const flagged=score>1800||events.length>160;
+   const {data:claimed,error:claimErr}=await db.from('nothing_rounds').update({claimed_at:new Date().toISOString(),score,events,duration:endAt,flagged}).eq('id',roundId).is('claimed_at',null).select('id');
+   if(claimErr||!claimed?.length)return respond({error:'This round was already claimed'},409);
+   if(flagged)await logFlag(player.id,roundId,'unusually high score');
+   const {data:existing}=await db.from('nothing_guest_scores').select('score').eq('player_id',player.id).maybeSingle();
+   await db.from('nothing_guest_players').update({display_name:name,last_seen_at:new Date().toISOString()}).eq('id',player.id);
+   const best=Math.max(score,existing?.score||0);
+   if(!existing||score>existing.score){
+    const {error:saveErr}=await db.from('nothing_guest_scores').upsert({player_id:player.id,display_name:name,score,achieved_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    if(saveErr)throw saveErr;
+   }
+   const {count}=await db.from('nothing_guest_scores').select('*',{count:'exact',head:true}).gt('score',best);
+   return respond({accepted:true,best,rank:(count||0)+1,flagged});
+  }
+  return respond({error:'Not found'},404);
+ } catch(e){console.error('nothing-game',action,e);return respond({error:'Something went wrong on our end.'},500)}
+});

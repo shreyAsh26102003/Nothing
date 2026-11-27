@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, extname, resolve, sep } from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { readFile,writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import assert from 'node:assert/strict';
@@ -60,7 +60,7 @@ try{
  await waitFor("document.querySelector('#hud').classList.contains('visible')",13000);
  assert.deepEqual(errors,[], 'JavaScript exceptions');
  console.log('CHROMIUM MOBILE SMOKE PASSED: play, timer, three misses, game-over, leaderboard, replay');
-}catch(e){console.error('CHROMIUM TEST FAILED',e);process.exitCode=1}finally{
+}catch(e){console.error('CHROMIUM TEST FAILED',e);process.exitCode=1;try{const shot=await send('Page.captureScreenshot',{format:'png'});await writeFile('test-failure.png',Buffer.from(shot.data,'base64'))}catch{}}finally{
  try{ws?.close()}catch{}child.kill('SIGTERM');
  await new Promise(resolve=>server.close(resolve));
  await rm(profile,{recursive:true,force:true});

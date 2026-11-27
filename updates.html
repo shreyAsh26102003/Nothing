@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#fff0d4">
-  <meta name="description" content="A good thing has been growing for a very long time. We're wondering what comes next. An idea from After All.">
-  <meta property="og:title" content="Something good is growing. — After All">
-  <meta property="og:description" content="What if the original indulgence had a second act?">
+  <meta name="description" content="Hear about what we're making at After All. We'll email when there's something new to share.">
+  <meta property="og:title" content="After All — Updates">
+  <meta property="og:description" content="An update from After All when we have something to share.">
   <meta property="og:image" content="https://becauseafterall.com/social-card.svg">
   <title>Something good is growing. — After All</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -52,24 +52,20 @@
   <div class="story-shell">
     <nav class="story-nav" aria-label="Navigation">
       <span class="story-brand">AFTER ALL.</span>
-      <a class="story-back" href="/">← BACK TO NOTHING.</a>
+      <a class="story-back" href="/">← BACK TO GAME</a>
     </nav>
     <main class="story-main">
-      <span class="story-eyebrow">A SMALL THOUGHT</span>
+      <span class="story-eyebrow">A NOTE FROM AFTER ALL</span>
       <h1 class="story-heading">Something good<br>is growing.</h1>
       <div class="story-poem">
-        <p>Before anyone made a treat,<br>there was already one growing on a tree.</p>
-        <p>Bright without trying.<br>Sweet without asking.<br>Almost unfairly good.</p>
-        <p>Fruit has been doing just fine<br>for a very long time.</p>
-        <p class="turn">We just had a question.</p>
-        <p class="question">What if the original indulgence<br>had a second act?</p>
-        <p>We're finding out.</p>
+        <p>We've always thought fruit was pretty great on its own. Now we're working on a few ideas of our own, and we'd love to share them when they're ready.</p>
+        <p>We're still early, so we're keeping most of it to ourselves for now. If you'd like to see what comes next, leave us your email below.</p>
         <p class="signature">After All.</p>
       </div>
       <hr class="story-rule">
       <section class="story-signup" aria-labelledby="signup-title">
-        <h2 id="signup-title">You'll want to hear about this.</h2>
-        <p class="signup-detail">A little note when there's something worth sharing. Nothing more.</p>
+        <h2 id="signup-title">Want to hear from us?</h2>
+        <p class="signup-detail">We'll email you when we have something new to share. You can unsubscribe whenever you like.</p>
         <form id="updatesForm">
           <div class="story-email-row">
             <label for="email" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Your email address</label>
@@ -89,14 +85,14 @@
           </form>
           <p id="leaveStatus" role="status" aria-live="polite"></p>
         </details>
-        <p class="story-bottom"><a href="/privacy.html">Privacy</a> · <a href="/">Back to Nothing.</a></p>
+        <p class="story-bottom"><a href="/privacy.html">Privacy</a> · <a href="/">Back to the game</a></p>
       </section>
     </main>
   </div>
 <script>
 const API='https://scgihelnwihjckzzvxyc.supabase.co/functions/v1/nothing-game';
 function getGuest(){try{return JSON.parse(localStorage.getItem('nothing-guest-v2')||'null')}catch{return null}}
-document.getElementById('updatesForm').onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('join'),status=document.getElementById('status');btn.disabled=true;status.textContent='Adding you…';try{let g=getGuest();if(!g?.token){const r=await fetch(API+'?action=register',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error('Could not connect');g=await r.json();localStorage.setItem('nothing-guest-v2',JSON.stringify(g))}const response=await fetch(API+'?action=waitlist',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+g.token},body:JSON.stringify({email:document.getElementById('email').value,consent:document.getElementById('consent').checked})});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not save email');status.textContent=data.emailSent?'Check your inbox to confirm your email.':data.delivery==='provider_error'?'You\'re on the list. We couldn\'t send the confirmation email. Try again shortly.':data.delivery==='recently_attempted'?'A confirmation email may already be on its way. Check your inbox.':data.delivery==='verified'?'You\'re already confirmed.':data.delivery==='existing'?'If you\'re already on the list, you\'re all set.':'You\'re on the list.';document.getElementById('updatesForm').hidden=true}catch(err){status.textContent=err.message||'Could not save your email.'}finally{btn.disabled=false}};
+document.getElementById('updatesForm').onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('join'),status=document.getElementById('status');btn.disabled=true;status.textContent='Adding you…';try{let g=getGuest();if(!g?.token){const r=await fetch(API+'?action=register',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error('Could not connect');g=await r.json();localStorage.setItem('nothing-guest-v2',JSON.stringify(g))}const response=await fetch(API+'?action=waitlist',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+g.token},body:JSON.stringify({email:document.getElementById('email').value,consent:document.getElementById('consent').checked})});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not save email');status.textContent=data.emailSent?'We sent you an email. Open it to confirm your address.':data.delivery==='provider_error'?'We saved your email, but the confirmation message didn\'t go through. Please try again in a moment.':data.delivery==='recently_attempted'?'We recently sent a confirmation email. Please check your inbox.':data.delivery==='verified'?'You\'re already confirmed.':data.delivery==='existing'?'If you signed up before, we still have your email.':'We saved your email.';document.getElementById('updatesForm').hidden=true}catch(err){status.textContent=err.message||'Could not save your email.'}finally{btn.disabled=false}};
 
 document.getElementById('leaveForm').onsubmit=async e=>{e.preventDefault();const g=getGuest(),btn=document.getElementById('leaveButton'),status=document.getElementById('leaveStatus');if(!g?.token){status.textContent='This browser has no matching signup identity. Contact After All to request removal.';return}btn.disabled=true;status.textContent='Updating your preferences…';try{const r=await fetch(API+'?action=unsubscribe',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+g.token},body:JSON.stringify({email:document.getElementById('leaveEmail').value})});const d=await r.json();if(!r.ok)throw Error(d.error||'Could not update preferences');status.textContent='If this email was signed up here, it has been unsubscribed.'}catch(err){status.textContent=err.message||'Could not update your preferences'}finally{btn.disabled=false}};
 </script>

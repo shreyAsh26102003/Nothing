@@ -62,6 +62,7 @@ try{
  console.log('CHROMIUM MOBILE SMOKE PASSED: play, timer, three misses, game-over, leaderboard, replay');
 }catch(e){console.error('CHROMIUM TEST FAILED',e);process.exitCode=1;try{const shot=await send('Page.captureScreenshot',{format:'png'});await writeFile('test-failure.png',Buffer.from(shot.data,'base64'))}catch{}}finally{
  try{ws?.close()}catch{}child.kill('SIGTERM');
+ await delay(600);
  await new Promise(resolve=>server.close(resolve));
- await rm(profile,{recursive:true,force:true});
+ try{await rm(profile,{recursive:true,force:true,maxRetries:20,retryDelay:150})}catch(err){console.warn('Chrome profile cleanup incomplete:',err.message)}
 }

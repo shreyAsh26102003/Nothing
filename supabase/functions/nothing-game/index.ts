@@ -54,7 +54,7 @@ Deno.serve(async (req:Request)=>{
   if(action==='leaderboard'&&req.method==='GET')return respond(await top());
   if(action==='register'&&req.method==='POST'){
    const ip=req.headers.get('cf-connecting-ip')||req.headers.get('x-real-ip');
-   if(ip){const fingerprint=await hash(ip+':nothing:'+key.slice(0,16));const {data:allowed,error:rateError}=await db.rpc('nothing_rate_allow',{p_fingerprint:fingerprint,p_action:'register',p_limit:120});if(rateError)throw rateError;if(!allowed)return respond({error:'Too many new players from this connection. Try again later.'},429)}
+   if(ip){const fingerprint=await hash('nothing-register:'+ip+':'+(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''));const {data:allowed,error:rateError}=await db.rpc('nothing_rate_allow',{p_fingerprint:fingerprint,p_action:'register',p_limit:120});if(rateError)throw rateError;if(!allowed)return respond({error:'Too many new players from this connection. Try again later.'},429)}
    const token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(v=>v.toString(16).padStart(2,'0')).join('');
    const digest=await hash(token);
    const {data,error}=await db.from('nothing_guest_players').insert({secret_hash:digest}).select('id').single();

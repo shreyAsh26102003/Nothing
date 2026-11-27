@@ -16,7 +16,7 @@ function sound(kind){if(state.mute)return;try{const Audio=window.AudioContext||w
 function pulse(ms=15){try{if(navigator.vibrate)navigator.vibrate(ms)}catch{}}
 function toggleSound(){state.mute=!state.mute;save('nothing-muted',state.mute);label('sound',state.mute?'Sound off':'Sound on');$('sound').setAttribute('aria-pressed',String(!state.mute));if(!state.mute)sound('start')}
 label('sound',state.mute?'Sound off':'Sound on');$('sound').setAttribute('aria-pressed',String(!state.mute));$('sound').onclick=toggleSound;
-function resize(){const w=innerWidth,h=innerHeight;state.width=w;state.height=h;state.dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*state.dpr);canvas.height=Math.round(h*state.dpr);ctx.setTransform(state.dpr,0,0,state.dpr,0,0);ctx.fillStyle='#fff0d4';ctx.fillRect(0,0,w,h)}
+function resize(){const w=Math.max(280,innerWidth),h=Math.max(400,innerHeight);state.dpr=Math.min(devicePixelRatio||1,2);if(!state.playing&&!state.starting){state.width=w;state.height=h}canvas.width=Math.round(w*state.dpr);canvas.height=Math.round(h*state.dpr);ctx.setTransform(state.dpr*w/state.width,0,0,state.dpr*h/state.height,0,0);ctx.fillStyle='#fff0d4';ctx.fillRect(0,0,state.width,state.height)}
 addEventListener('resize',resize);resize();
 async function request(action,method='GET',body=null,secured=true){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),6000);try{const token=secured?state.guest?.token:null;const response=await fetch(API+'?action='+encodeURIComponent(action),{method,headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:body===null?undefined:JSON.stringify(body),signal:controller.signal,cache:'no-store'});const result=await response.json();if(!response.ok)throw new Error(result.error||'The connection did not work.');return result}finally{clearTimeout(timer)}}
 function track(event){request('track','POST',{event,anonymousId:state.anonymous,referrerId:referral},false).catch(()=>{})}
@@ -29,7 +29,7 @@ function localWaves(){const arr=[];let sec=.8;while(sec<44){const phase=sec<7?0:
 function elapsed(now=performance.now()){return Math.max(0,(now-state.startAt)/1000)}
 function updateHud(){label('score',state.score);label('time',state.seconds);label('misses',state.misses+'/3')}
 async function begin(){
- if(state.starting)return;state.starting=true;
+ if(state.starting||state.playing)return;resize();state.starting=true;
  const btn=$('play');btn.disabled=true;label('play','GETTING FRUIT READY…');
  sound('start');
  let waves=null,roundId=null;
@@ -83,14 +83,14 @@ function frame(now){
  const recent=state.trail.filter(p=>now-p.t<140);state.trail=recent;if(recent.length>1){ctx.lineWidth=10;ctx.strokeStyle='#ff705c';ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();recent.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke()}
  label('time',Math.max(0,Math.ceil(state.seconds-sec)));state.raf=requestAnimationFrame(frame);
 }
-function point(e){return{x:e.clientX,y:e.clientY,t:performance.now()}}
+function point(e){return{x:e.clientX*state.width/Math.max(1,innerWidth),y:e.clientY*state.height/Math.max(1,innerHeight),t:performance.now()}}
 canvas.addEventListener('pointerdown',e=>{if(!state.playing)return;state.drag=true;state.lastPointer=point(e);state.trail=[state.lastPointer];try{canvas.setPointerCapture(e.pointerId)}catch{}});
 canvas.addEventListener('pointermove',e=>{if(!state.drag||!state.playing)return;const p=point(e);hitObjects(state.lastPointer,p);state.lastPointer=p;state.trail.push(p)});
 function pointerUp(){state.drag=false;state.lastPointer=null}
 canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointercancel',pointerUp);
 document.addEventListener('visibilitychange',()=>{if(!state.playing)return;if(document.hidden){state.pausedAt=performance.now();cancelAnimationFrame(state.raf);pointerUp()}else if(state.pausedAt){const now=performance.now();state.startAt+=now-state.pausedAt;state.pausedAt=0;state.lastFrame=now;state.raf=requestAnimationFrame(frame)}});
 async function endGame(reason){
- if(!state.playing)return;const endAt=Math.min(45,elapsed());state.playing=false;cancelAnimationFrame(state.raf);state.reason=reason;track('ended');sound(reason==='time'?'start':'miss');
+ if(!state.playing)return;const endAt=Math.min(45,elapsed());state.playing=false;cancelAnimationFrame(state.raf);state.reason=reason;track('ended');if(reason!=='bomb')sound(reason==='time'?'start':'miss');
  const previousBest=Number(getStored('nothing-local-best-v2')||0),best=Math.max(state.score,previousBest);save('nothing-local-best-v2',best);
  label('finalScore',state.score);label('best','Personal best: '+best);
  label('resultHeading',state.score>previousBest&&state.score>0?'New personal best.':reason==='bomb'?'A little explosive.':reason==='misses'?'That was close.':"Time's up.");
